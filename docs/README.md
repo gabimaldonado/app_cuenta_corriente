@@ -1,0 +1,1 @@
+// Diagrama entidad-relación, contrato JSON y capturas.
