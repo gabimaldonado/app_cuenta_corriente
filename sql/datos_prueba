@@ -1,0 +1,110 @@
+
+-- Carga datos de ejemplo (inventados) para poder probar la app.
+-- Se importa DESPUÉS de schema.sql, porque las tablas tienen que existir.
+
+
+-- "Entrar a la base cuenta_corriente": lo que sigue se guarda ahí.
+USE cuenta_corriente;
+
+
+
+-- 1. USUARIO para entrar a la app
+--    Mail:        admin@cuentacorriente.com
+--    Contraseña:  admin123
+--    En la base NO se guarda "admin123": se guarda la contraseña
+--    "disfrazada" (el texto raro que empieza con $2y$).
+--    El login la compara con password_verify().
+
+INSERT INTO usuarios (nombre, email, password_hash) VALUES
+('Dueña del negocio', 'admin@cuentacorriente.com',
+ '$2y$12$3P5FN4Ym3T9Up.4c9KHnOu97b9FtmBy2zU/5ISDdlZNm7mrcpmJi.');
+
+
+
+-- 2. CLIENTAS
+--    No se escribe el id: MySQL les pone 1, 2, 3 y 4 solo, en este orden.
+--    NULL = ese dato se deja vacío.
+
+INSERT INTO clientes (nombre, telefono, dni, direccion, notas) VALUES
+('Laura Gómez',     '5492914000001', '30111222', 'Belgrano 123',  'Prefiere talle M'),        -- id 1
+('Marta Fernández', '5492914000002', '28333444', 'Alsina 456',    NULL),                      -- id 2
+('Sofía Ruiz',      '5492914000003', '35555666', 'Sarmiento 789', 'Paga por transferencia'),  -- id 3
+('Carla Pérez',     '5492914000004', NULL,       NULL,            'Clienta nueva');           -- id 4
+
+
+
+-- 3. PRENDAS del catálogo (también se numeran solas, del 1 al 8)
+--    Orden de los datos: descripción, talle, color, precio, stock
+
+INSERT INTO productos (descripcion, talle, color, precio, stock) VALUES
+('Jean recto',        '38', 'Azul',    45000.00, 5),   -- id 1
+('Remera básica',     'M',  'Blanca',  15000.00, 8),   -- id 2
+('Remera estampada',  'S',  'Negra',   18000.00, 5),   -- id 3
+('Campera de jean',   'M',  'Celeste', 65000.00, 2),   -- id 4
+('Campera inflable',  'L',  'Negra',   80000.00, 2),   -- id 5
+('Buzo con capucha',  'M',  'Gris',    35000.00, 4),   -- id 6
+('Pollera plisada',   'S',  'Beige',   30000.00, 3),   -- id 7
+('Vestido largo',     'M',  'Verde',   55000.00, 2);   -- id 8
+
+
+
+-- 4. ENTREGAS (prendas que las clientas se llevaron a probar)
+--    Primero se crea la entrega y después se cargan sus prendas.
+--    Orden de los datos de cada prenda:
+--    (número de entrega, número de prenda, precio de ese día, estado)
+
+
+-- ENTREGA 1 — El ejemplo del TP. Ya está CERRADA (Laura ya decidió).
+-- Laura (clienta 1) se llevó 5 prendas a probar
+-- y se quedó con el jean y la campera de jean.
+INSERT INTO entregas (cliente_id, fecha, estado) VALUES (1, '2026-09-20 10:30:00', 'cerrada');
+INSERT INTO entrega_items (entrega_id, producto_id, precio_unitario, estado) VALUES
+(1, 1, 45000.00, 'comprada'),   -- jean: se lo quedó
+(1, 2, 15000.00, 'devuelta'),   -- remera básica: la devolvió
+(1, 3, 18000.00, 'devuelta'),   -- remera estampada: la devolvió
+(1, 4, 65000.00, 'comprada'),   -- campera de jean: se la quedó
+(1, 5, 80000.00, 'devuelta');   -- campera inflable: la devolvió
+
+-- ENTREGA 2 — Todavía ABIERTA.
+-- Marta (clienta 2) tiene 2 prendas a prueba.
+-- Mientras estén "en_prueba" NO suman a lo que debe.
+INSERT INTO entregas (cliente_id, fecha, estado) VALUES (2, '2026-09-28 17:00:00', 'abierta');
+INSERT INTO entrega_items (entrega_id, producto_id, precio_unitario, estado) VALUES
+(2, 6, 35000.00, 'en_prueba'),  -- buzo
+(2, 7, 30000.00, 'en_prueba');  -- pollera
+
+-- ENTREGA 3 — CERRADA. Sofía (clienta 3) se quedó con todo.
+INSERT INTO entregas (cliente_id, fecha, estado) VALUES (3, '2026-09-15 12:00:00', 'cerrada');
+INSERT INTO entrega_items (entrega_id, producto_id, precio_unitario, estado) VALUES
+(3, 8, 55000.00, 'comprada'),   -- vestido
+(3, 2, 15000.00, 'comprada');   -- remera básica
+
+
+
+-- 5. PAGOS
+--    Orden de los datos: (clienta, fecha, cuánto pagó, cómo pagó, nota)
+
+INSERT INTO pagos (cliente_id, fecha, monto, medio, observacion) VALUES
+(1, '2026-09-25 11:00:00', 20000.00, 'efectivo',      'Primera cuota'),  -- Laura
+(1, '2026-10-01 18:00:00', 30000.00, 'transferencia', NULL),             -- Laura otra vez
+(3, '2026-09-20 09:00:00', 70000.00, 'transferencia', 'Pagó todo');      -- Sofía
+
+
+
+-- ¿CUÁNTO DEBE CADA CLIENTA?
+--   Laura:  compró 45.000 + 65.000 = 110.000  y pagó 20.000 + 30.000 = 50.000
+--           -> debe 60.000
+--   Marta:  sus prendas están a prueba, todavía no compró nada -> debe 0
+--   Sofía:  compró 55.000 + 15.000 = 70.000 y pagó 70.000 -> debe 0
+--   Carla:  no se llevó nada -> debe 0
+--
+-- Para comprobarlo en phpMyAdmin, copiá la consulta de abajo en la
+-- pestaña SQL (sin los dos guiones del principio de cada línea):
+--
+-- SELECT c.id, c.nombre,
+--   COALESCE((SELECT SUM(i.precio_unitario) FROM entrega_items i
+--             JOIN entregas e ON e.id = i.entrega_id
+--             WHERE e.cliente_id = c.id AND i.estado = 'comprada'), 0)
+-- - COALESCE((SELECT SUM(p.monto) FROM pagos p WHERE p.cliente_id = c.id), 0)
+--   AS saldo
+-- FROM clientes c;
