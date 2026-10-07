@@ -1,0 +1,6 @@
+<?php
+
+define("DB_HOST", "localhost");          // dónde está la base
+define("DB_NAME", "cuenta_corriente");   // nombre de la base
+define("DB_USER", "root");               // usuario de MySQL
+define("DB_PASS", "");                   // contraseña de MySQL (en XAMPP, vacía)
