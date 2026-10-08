@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Dashboard App cuenta corriente</title>
+	<link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+	
+	<main>
+		<section id="paginaInicio">
+			<header>
+				<h1>Inicio</h1>
+			</header>
+			<section>
+				<header class="statusHeader">
+					<h2>TOTAL QUE TE DEBEN</h2>
+					<p id="PI-montoTotal">$ 000.000</p>
+					<p id="PI-cantClientes">Entre 00 clientas con saldo pendiente</p>
+				</header>
+				<button id="PI-nuevaEntrega" class="botonConfirmatorio">Nueva Entrega</button>
+				<button id="PI-registrarPago">Registrar Pago</button>
+			</section>
+			<section id="pruebas">
+				<header class="leftRightFlex">
+					<h2>Prendas a prueba</h2>
+					<p id="PI-cantEntregas">2 entregas abiertas</p>
+				</header>
+				<ul id="PI-listaEntregas">
+					<!--generado dinamicamente por el codigo-->
+				</ul>
+			</section>
+			<section >
+				<header class="leftRightFlex">
+					<h2>Las que mas deben</h2>
+					<a id="PI-verClientes" href="#">Ver todas</a>
+				</header>
+				<ul id="PI-listaDeudores">
+					<!--generado dinamicamente por el codigo-->
+				</ul>
+			</section>
+		</section>
+		
+		<section id="paginaClientes">
+			<header class="leftRightFlex">
+				<h1>Clientes</h1>
+				<a id="PC-nuevoCliente">+</a>
+			</header>
+			<section>
+				<input id="PC-busquedaClientes" type="text" placeholder="Busqueda por nombre o DNI">
+				<div id="PC-filtrosClientes" class="botonesOpcionMultiple">
+					<input type="radio" name="filtroCliente" value="1" id="PC-FC-todas" checked>
+					<label for="PC-FC-todas">Todas</label>
+					<input type="radio" name="filtroCliente" value="2" id="PC-FC-deudas">
+					<label for="PC-FC-deudas">Con deuda</label>
+					<input type="radio" name="filtroCliente" value="3" id="PC-FC-pruebas">
+					<label for="PC-FC-pruebas">Con prendas a prueba</label>
+				</div>
+			</section>
+			<ul id="PC-listaClientes">
+				<!--generado dinamicamente por el codigo-->
+			</ul>
+		</section>
+
+		<section id="paginaPrendas">
+			<header class="leftRightFlex">
+				<h1>Prendas</h1>
+				<a id="PP-nuevaPrenda">+</a>
+			</header>
+			<section>
+				<input id="PP-busquedaPrendas" type="text" placeholder="Busqueda por nombre, talle o color">
+				<div id="PP-filtrosPrendas" class="botonesOpcionMultiple">
+					<input type="radio" name="filtroPrenda" value="1" id="PP-FP-todas" checked>
+					<label for="PP-FP-todas">Todas</label>
+					<input type="radio" name="filtroPrenda" value="2" id="PP-FP-conStock">
+					<label for="PP-FP-conStock">Con stock</label>
+					<input type="radio" name="filtroPrenda" value="3" id="PP-FP-sinStock">
+					<label for="PP-FP-sinStock">Sin Stock</label>
+				</div>
+			</section>
+			<ul id="PP-listaPrendas">
+				<!--generado dinamicamente por el codigo-->
+			</ul>
+		</section>
+	</main>
+
+	<dialog id="popupNuevaEntrega" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Nueva Entrega</h2>
+			</header>
+			<form id="NE-formulario">
+				<label for="NE-busquedaClienta">Clienta</label>
+				<input id="NE-busquedaClienta" name="nombre" type="text" placeholder="Nombre y Apellido" list="NE-datalistClientes" required>
+				<datalist id="NE-datalistClientes">
+					<!--generado dinamicamente por el codigo-->
+				</datalist>
+				<label for="NE-busquedaPrenda">Agregar prenda</label>
+				<input id="NE-busquedaPrenda" type="text" placeholder="Buscar en el catalogo" list="NE-datalistPrendas">
+				<datalist id="NE-datalistPrendas">
+					<!--generado dinamicamente por el codigo-->
+				</datalist>
+				<h3 id="NE-cantPrendas">Se lleva a probar (5)</h3>
+				<ul id="NE-listaPrendas">
+					<!--generado dinamicamente por el codigo-->
+				</ul>
+				<p>Las prendas a prueba no suman al saldo. Se descuentan del stock hasta que vuelvan.</p>
+			</form>
+			
+			<footer>
+				<div class="leftRightFlex">
+					<p>Total a prueba</p>
+					<p id="NE-totalEntrega">$ 000.000</p>
+				</div>
+				
+				<button class="botonConfirmatorio" type="submit" form="NE-formulario">Guardar entrega</button>
+			</footer>
+		</div>
+	</dialog>
+
+	<dialog id="popupConfirmarEntrega" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Confirmar Compra</h2>
+			</header>
+			<main>
+				<h3 id="CE-nombreCliente">Nombre Apellido - Entrega del 00/00</h3>
+				<form id="CE-formulario">
+					<!--generado dinamicamente por el codigo-->
+				</form>
+			</main>
+			<footer>
+				<p id="CE-statsResultado">Se queda 2 - Devuelve 3 (vuelven al stock)</p>
+				<div class="leftRightFlex">
+					<p>Se suma al saldo</p>
+					<p id="CE-precioTotal" class="precioDeuda">+ $ 00.000</p>
+				</div>
+				<button class="botonConfirmatorio" type="submit" form="CE-formulario">Confirmar y actualizar saldo</button>
+			</footer>
+		</div>
+	</dialog>
+
+	<dialog id="popupRegistrarPago" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Registrar Pago</h2>
+			</header>
+			<form id="RP-formulario">
+				<label for="RP-busquedaClienta">Clienta</label>
+				<input id="RP-busquedaClienta" type="text" placeholder="Nombre y Apellido" list="RP-datalistClientes" required>
+				<datalist id="RP-datalistClientes">
+
+				</datalist>
+				<div class="statusHeader">
+					<p>SALDO ACTUAL</p>
+					<p id="RP-saldoCliente" class="precioDeuda">$ 00.000</p>
+				</div>
+				<label for="RP-ingresoMonto">Monto</label>
+				<input id="RP-ingresoMonto" name="monto" type="number" placeholder="$0" min="0" required>
+				<label>Medio de pago</label>
+				<div class="botonesOpcionMultiple">
+					<input type="radio" name="medio" value="efectivo" id="RP-MP-efectivo" checked>
+					<label for="RP-MP-efectivo">Efectivo</label>
+					<input type="radio" name="medio" value="transferencia" id="RP-MP-transferencia">
+					<label for="RP-MP-transferencia">Transferencia</label>
+					<input type="radio" name="medio" value="tarjeta" id="RP-MP-tarjeta">
+					<label for="RP-MP-tarjeta">Tarjeta</label>
+				</div>
+				<label for="RP-comentarioPago">Observacion (opcional)</label>
+				<textarea name="observacion" id="RP-comentarioPago"></textarea>
+				<p>El monto tiene que ser mayor a cero. Si supera el saldo, la app avisa antes de guardar.</p>
+			</form>
+			<footer>
+				<div class="leftRightFlex">
+					<p>Saldo despues del pago</p>
+					<p id="RP-saldoRestante">$ 00.000</p>
+				</div>
+				<button class="botonConfirmatorio" type="submit" form="RP-formulario">Guardar pago</button>
+			</footer>
+		</div>
+	</dialog>
+
+	<dialog id="popupNuevoCliente" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Nuevo Cliente</h2>
+			</header>
+			<form id="NC-formulario">
+				<label for="NC-nombre">Nombre y Apellido*</label>
+				<input id="NC-nombre" name="nombre" type="text" placeholder="Nombre y Apellido" maxlength="100" required>
+				<label for="NC-telefono">Telefono*</label>
+				<input id="NC-telefono" name="telefono" type="tel", placeholder="Telefono" required>
+				<label for="NC-dni">DNI</label>
+				<input id="NC-dni" name="dni" type="number" minlength="8" maxlength="8" placeholder="DNI">
+				<label for="NC-direccion">Direccion</label>
+				<input id="NC-direccion" name="direccion" type="text" maxlength="150" placeholder="Direccion">
+				<label for="NC-notas">Notas</label>
+				<textarea id="NC-notas" name="notas" type="text" maxlength="255" placeholder="Notas"></textarea>
+			</form>
+			<footer>
+				<button class="botonConfirmatorio" type="submit" form="NC-formulario">Registrar Cliente</button>
+			</footer>
+		</div>
+	</dialog>
+
+	<dialog id="popupNuevaPrenda" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Nueva Prenda</h2>
+			</header>
+			<form id="NP-formulario">
+				<label for="NP-descripcion">Descripcion*</label>
+				<input id="NP-descripcion" name="descripcion" type="text" placeholder="Descripcion" maxlength="100" required>
+				<label for="NP-talle">Talle</label>
+				<input id="NP-talle" name="talle" type="text" maxlength="10" placeholder="Talle">
+				<label for="NP-color">Color</label>
+				<input id="NP-color" name="color" type="text" maxlength="30" placeholder="Color">
+				<label for="NP-precio">Precio*</label>
+				<input id="NP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
+				<label for="NP-stock">Stock inicial*</label>
+				<input id="NP-stock" name="stock" type="number" min="0" placeholder="Stock" required>
+			</form>
+			<footer>
+				<button class="botonConfirmatorio" type="submit" form="NP-formulario">Registrar Prenda</button>
+			</footer>
+		</div>
+	</dialog>
+
+	<dialog id="popupDatosCliente" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2 id="DC-nombre">Nombre y Apellido</h2>
+			</header>
+			<p id="DC-numYDni">+54 9 11 0000-0000 - DNI 00.000.000</p>
+			<section class="statusHeader">
+				<h3>SALDO ACTUAL</h3>
+				<p id="DC-saldo" class="precioDeuda">00.000</p>
+				<p id="DC-comprasPagos">Compras $ 00.000 - Pagos $ 00.000</p>
+			</section>
+			<section class="botonesCliente">
+				<button id="DC-nuevaEntrega">Entrega</button>
+				<button id="DC-nuevoPago">Pago</button>
+				<button id="DC-whatsapp">WhatsApp</button>
+			</section>
+			<section>
+				<header>
+					<h3>Entregas activas</h3>
+				</header>
+				<ul id="DC-listaEntregas">
+
+				</ul>
+			</section>
+			<section>
+				<header class="leftRightFlex">
+					<h3>Movimientos</h3>
+					<p>Mas recientes primero</p>
+				</header>
+				<ul id="DC-listaMovimientos">
+					
+				</ul>
+			</section>
+		</div>
+	</dialog>
+
+	<dialog id="popupDatosPrenda" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2 id="DP-nombre">Jean Recto</h2>
+			</header>
+			<form id="DP-formulario">
+				<label for="DP-talle">Talle</label>
+				<input id="DP-talle" name="talle" type="text" maxlength="10" placeholder="Talle">
+				<label for="DP-color">Color</label>
+				<input id="DP-color" name="color" type="text" maxlength="30" placeholder="Color">
+				<label for="DP-precio">Precio*</label>
+				<input id="DP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
+				<label for="DP-stock">Stock*</label>
+				<input id="DP-stock" name="stock" type="number" min="0" placeholder="Stock" required>
+			</form>
+			<footer>
+				<button class="botonConfirmatorio" type="submit" form="DP-formulario">Actualizar Prenda</button>
+			</footer>
+		</div>
+	</dialog>
+
+
+	<footer>
+		<nav>
+			<a id="vinculoInicio" href="#">Inicio</a>
+			<a id="vinculoClientes" href="#">Clientes</a>
+			<a id="vinculoPrendas" href="#">Prendas</a>
+		</nav>
+	</footer>
+
+	<script src="src/utils.js"></script>
+	<script src="src/api.js"></script>
+	<script src="src/popups.js"></script>
+	<script src="src/paginas.js"></script>
+	<script src="src/init.js"></script>
+</body>
+</html>
