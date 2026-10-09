@@ -10,4 +10,4 @@ document.getElementById("vinculoPrendas").addEventListener("click",(event)=>{
 	paginaPrendas.abrir();
 })
 
-paginaPrendas.abrir();
+paginaInicio.abrir();

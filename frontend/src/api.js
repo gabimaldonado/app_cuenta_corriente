@@ -68,17 +68,24 @@ let testEntregas = [
 	},
 ];
 
+async function fakeWait(time) {
+	await new Promise((resolve)=>setTimeout(resolve, time));
+}
+
 async function getEntregas() {
 	//todo
 	//test data
+	await fakeWait(1000)
 	return testEntregas;
 }
 async function getEntregaId(id_entrega) {
 	//todo
 	//test data
+	await fakeWait(1000)
 	return testEntregas.find((entrega)=>{ return entrega.id === id_entrega });
 }
 async function getEntregasCliente(id_cliente) {
+	await fakeWait(1000)
 	return testEntregas.filter((entrega)=>{ return entrega.cliente_id == id_cliente });
 }
 
@@ -153,12 +160,14 @@ let testClientes = [
 async function getClientes() {
 	//todo
 	//test data
+	await fakeWait(1000)
 	return testClientes;
 }
 
 async function getClienteId(id) {
 	//todo
 	//test data
+	await fakeWait(1000)
 	return testClientes.find((cliente)=>{ return cliente.id == id });
 }
 
@@ -215,12 +224,14 @@ async function postPago(cliente_id,infoForm) {
 }
 
 async function getPagosCliente(cliente_id) {
+	await fakeWait(1000)
 	return testPagos.filter((pago)=>{
 		return pago.cliente_id == cliente_id
 	});
 }
 
 async function getDeudas() {
+	await fakeWait(1000)
 	let deudasTotales = {};
 	testEntregas.forEach((entrega)=>{
 		if (!deudasTotales[entrega.cliente_id]) {
@@ -250,6 +261,7 @@ async function getDeudas() {
 }
 
 async function getDeudaCliente(id_cliente) {
+	await fakeWait(1000)
 	let deudaTotal = 0;
 	let compras = 0;
 	let pagos = 0;
@@ -343,15 +355,18 @@ let testPrendas = [
 ];
 async function getPrendas() {
 	//todo
+	await fakeWait(1000)
 	return testPrendas;
 }
 
 async function getPrendaId(id_prenda) {
 	//todo
+	await fakeWait(1000)
 	return testPrendas.find((prenda)=>{ return prenda.id == id_prenda });
 }
 
 async function getPrendasInEntrega(id_entrega) {
+	await fakeWait(1000)
 	let entrega = await getEntregaId(id_entrega);
 	let prendas = [];
 	await Promise.all(entrega.entrega_items.map(async (item)=>{

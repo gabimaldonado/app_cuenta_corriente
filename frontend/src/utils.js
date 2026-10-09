@@ -26,11 +26,27 @@ function formatearMonto(numero,minDigitos,maxDecimales) {
 
 function crearDivInfoPrenda(prenda) {
 	const divInfo = document.createElement("div");
-	divInfo.innerHTML = `
-		<h4>${prenda.descripcion}</h4>
-		<p>Talle ${prenda.talle.toString()} - ${prenda.color}</p>
-	`;
+	const titulo = document.createElement("h4");
+	titulo.innerText = prenda.descripcion;
+	divInfo.appendChild(titulo);
+	const desc = document.createElement("p");
+	desc.innerText = "Talle "+prenda.talle+" - "+prenda.color;
+	divInfo.appendChild(desc);
+
 	return divInfo;
+}
+
+function crearElementoCarga() {
+	const elemento = document.createElement("p");
+	elemento.innerText = "Cargando...";
+	return elemento;
+}
+
+function crearElementoErr(errMsg) {
+	const elemento = document.createElement("p");
+	elemento.innerText = errMsg;
+	elemento.classList.add("error");
+	return elemento;
 }
 
 const paginas = [

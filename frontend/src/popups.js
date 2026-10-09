@@ -8,46 +8,72 @@ const popupConfirmarEntrega = (()=>{
 	};
 
 	const elementoTitulo = document.getElementById("CE-nombreCliente");	
-	self.abrir = async (infoEntrega)=>{
+	self.abrir = (infoEntrega,infoCliente)=>{
 		self.submitted = false;
 		self.popup.showModal();
-
-		const infoCliente = await getClienteId(infoEntrega.cliente_id);
-		const prendasEntrega = await getPrendasInEntrega(infoEntrega.id);
 		self.entregaActual = infoEntrega;
 		
 		const formateadorFecha = new Intl.DateTimeFormat();
 		elementoTitulo.innerText = infoCliente.nombre + " - Entrega del " + formateadorFecha.format(infoEntrega.fecha);
 		
+		cargarPrendas();
+	};
+	
+	async function cargarPrendas() {
 		self.formulario.innerHTML = "";
-		infoEntrega.entrega_items.forEach((item)=>{
+		let elementoCarga = crearElementoCarga();
+		self.formulario.appendChild(elementoCarga);
+		descFooter.innerText = "Cargando...";
+		deudaFooter.innerText = "Cargando...";
+
+		let prendasEntrega = [];
+		try {
+			prendasEntrega = await getPrendasInEntrega(self.entregaActual.id);
+		} catch (err) {
+			self.formulario.appendChild(crearElementoErr("No se han podido cargar los prendas asociadas a esta entrega: "+err));
+			descFooter.innerText = "Error de carga";
+			deudaFooter.innerText = "Error de carga";
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+		self.entregaActual.entrega_items.forEach((item)=>{
 			const infoPrenda = prendasEntrega.find((prenda)=>{return prenda.id == item.producto_id;});
-			const elementoPrenda = document.createElement("li");
-			elementoPrenda.classList.add("prendaConfirmar");
-			const prendaIdHTML=`PRENDA-${item.producto_id}`;
-			elementoPrenda.innerHTML = `
-				<div class="leftRightFlex">
-					<div>
-						${crearDivInfoPrenda(infoPrenda).innerHTML}
-					</div>
-					<p>$ ${formatearMonto(item.precio_unitario,3,1)}</p>
-				</div>
-				<div class="botonesOpcionMultiple">
-					<input type="radio" name="${prendaIdHTML}" id="${prendaIdHTML}-se-queda" value="1" checked>
-					<label for="${prendaIdHTML}-se-queda">Se queda</label>
-					<input type="radio" name="${prendaIdHTML}" id="${prendaIdHTML}-devuelve" value="2">
-					<label for="${prendaIdHTML}-devuelve">Devuelve</label>
-				</div>
-			`;
-			
-			self.formulario.appendChild(elementoPrenda);
-			
-			elementoPrenda.addEventListener("click",()=>{
-				actualizarFooter();
-			});
+			self.formulario.appendChild(crearElementoPrenda(item,infoPrenda));
 		});
 		actualizarFooter();
-	};
+	}
+
+	function crearElementoPrenda(itemEntrega,infoPrenda) {
+		const prendaIdHTML=`PRENDA-${itemEntrega.producto_id}`;
+		const elementoPrenda = document.createElement("li");
+		elementoPrenda.classList.add("prendaConfirmar");
+
+		const divisorInfo = document.createElement("div");
+		elementoPrenda.appendChild(divisorInfo);
+
+		const divInfoPrenda = crearDivInfoPrenda(infoPrenda);
+		divisorInfo.appendChild(divInfoPrenda);
+
+		const monto = document.createElement("p");
+		monto.innerText = "$ "+formatearMonto(itemEntrega.precio_unitario,3,2);
+		divisorInfo.appendChild(monto);
+
+		const divisorBotones = document.createElement("div");
+		divisorBotones.classList.add("botonesOpcionMultiple");
+		divisorBotones.innerHTML = `
+			<input type="radio" name="${prendaIdHTML}" id="${prendaIdHTML}-se-queda" value="1" checked>
+			<label for="${prendaIdHTML}-se-queda">Se queda</label>
+			<input type="radio" name="${prendaIdHTML}" id="${prendaIdHTML}-devuelve" value="2">
+			<label for="${prendaIdHTML}-devuelve">Devuelve</label>
+		`
+		elementoPrenda.appendChild(divisorBotones);
+
+		divisorBotones.addEventListener("click",()=>{
+			actualizarFooter();
+		});
+		return elementoPrenda;
+	}
 
 	self.popup.addEventListener("close",(event)=>{
 		self.entregaActual = undefined;
@@ -120,7 +146,7 @@ const popupNuevaEntrega = (()=>{
 
 	let opcionesPrendas = undefined;
 	let opcionesClientes = undefined;
-	self.abrir = async (nombreCliente)=>{
+	self.abrir = (nombreCliente)=>{
 		self.submitted = false;
 		self.popup.showModal();
 
@@ -129,21 +155,9 @@ const popupNuevaEntrega = (()=>{
 		}
 
 		self.prendasSeleccionadas = [];
-		opcionesPrendas = {};
-		opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
-		
 		listaPrendas.innerHTML = "";
-		datalistPrendas.innerHTML = "";
-		const prendas = await getPrendas();
-		prendas.forEach((prenda)=>{
-			if (prenda.stock <= 0) {
-				return;
-			}
-			const opcion = document.createElement("option");
-			opcion.setAttribute("value",hashPrenda(prenda));
-			datalistPrendas.appendChild(opcion);
-			opcionesPrendas[hashPrenda(prenda)] = prenda;
-		});
+
+		generarOpciones();
 		actualizarMontos();
 	};
 
@@ -153,36 +167,74 @@ const popupNuevaEntrega = (()=>{
 		opcionesClientes = undefined;
 	});
 
+	const contenedorError = document.getElementById("NE-err")
+	async function generarOpciones() {
+		contenedorError.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		contenedorError.appendChild(elementoCarga);
+
+		let prendas = undefined;
+		try {
+			prendas = await getPrendas();
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se han podido cargar las opciones de prendas/clientes seleccionables: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+
+		
+		opcionesPrendas = {};
+		datalistPrendas.innerHTML = "";
+		prendas.forEach((prenda)=>{
+			if (prenda.stock <= 0) {
+				return;
+			}
+			const opcion = document.createElement("option");
+			opcion.setAttribute("value",hashPrenda(prenda));
+			datalistPrendas.appendChild(opcion);
+			opcionesPrendas[hashPrenda(prenda)] = prenda;
+		});
+	}
+
 	function agregarPrenda(prenda) {
 		if (self.prendasSeleccionadas.find((val)=>{return val===prenda;})) {
 			return;
 		}
 		
 		self.prendasSeleccionadas.push(prenda);
+		listaPrendas.appendChild(crearElementoPrenda(prenda));
+		actualizarMontos();
+	}
+
+	function crearElementoPrenda(infoPrenda) {
 		const nuevaPrenda = document.createElement("li");
 		nuevaPrenda.classList.add("leftRightFlex","prendaNuevaEntrega");
-		nuevaPrenda.innerHTML = `
-			<div>
-				${crearDivInfoPrenda(prenda).innerHTML}
-			</div>
-			<div class="prendaNuevaEntregaPrecio">
-				<p>$ ${formatearMonto(prenda.precio,3,1)}</p>
-				<a>X</a>
-			</div>
-		`;
+		
+		const divInfo = crearDivInfoPrenda(infoPrenda);
+		nuevaPrenda.appendChild(divInfo);
 
-		const botonBorrar = nuevaPrenda.querySelector("a");
+		const divPrecio = document.createElement("div");
+		divPrecio.classList.add("NE-prendaPrecio");
+		nuevaPrenda.appendChild(divPrecio);
+
+		const precio = document.createElement("p");
+		precio.innerText = "$ "+formatearMonto(infoPrenda.precio,3,2);
+		divPrecio.appendChild(precio);
+
+		const botonBorrar = document.createElement("a");
+		botonBorrar.innerText = "X";
+		divPrecio.appendChild(botonBorrar);
 		botonBorrar.addEventListener("click",()=>{
 			nuevaPrenda.remove();
 			self.prendasSeleccionadas = self.prendasSeleccionadas.filter((element)=>{
-				return element != prenda;
+				return element != infoPrenda;
 			});
 			actualizarMontos();
 		});
 
-		listaPrendas.appendChild(nuevaPrenda);
-
-		actualizarMontos();
+		return nuevaPrenda;
 	}
 
 	const cantPrendas = document.getElementById("NE-cantPrendas");
@@ -244,36 +296,64 @@ const popupRegistrarPago = (()=>{
 	const inputMonto = document.getElementById("RP-ingresoMonto");
 	let opcionesClientes = undefined;
 	let saldoClienta = 0;
-	self.abrir = async (nombreCliente)=>{
+	self.abrir = (nombreCliente)=>{
 		self.submitted = false;
 		self.popup.showModal();
-		opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
 		if (nombreCliente) {
 			busquedaClienta.value = nombreCliente;
 		}
-		await actualizarSaldoVisible();
+		cargarOpciones().then(actualizarSaldoVisible);
 	};
 
 	self.popup.addEventListener("close",(event)=>{
 		opcionesClientes = undefined;
 		saldoClienta = 0;
 	});
+	
+	const contenedorErrorOpciones = document.getElementById("RP-errOpciones")
+	async function cargarOpciones() {
+		contenedorErrorOpciones.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		contenedorErrorOpciones.appendChild(elementoCarga);
+		try {
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+		} catch (err) {
+			contenedorErrorOpciones.appendChild(crearElementoErr("No se han podido cargar los clientes seleccionables: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+	}
 
 	const visSaldo = document.getElementById("RP-saldoCliente");
 	const saldoRestante = document.getElementById("RP-saldoRestante")
 	async function actualizarSaldoVisible() {
 		const clienta = opcionesClientes[busquedaClienta.value];
-		if (clienta) {
-			const [saldo] = await getDeudaCliente(clienta.id);
-			busquedaClienta.setCustomValidity("");
-			visSaldo.innerText = "$ "+formatearMonto(saldo,3,2);
-			saldoClienta = saldo;
-		} else {
+		let clientaValida = true;
+		
+		let saldo = undefined;
+
+		if (!clienta) {
 			busquedaClienta.setCustomValidity("Por favor seleccione un cliente valido");
 			visSaldo.innerText = "Seleccione un cliente.";
 			saldoClienta = 0;
+			return;
 		}
-		verificarMontoIngresado();
+		busquedaClienta.setCustomValidity("Clienta cargandose...");
+		visSaldo.innerText = "Cargando...";
+		try {
+			[saldo] = await getDeudaCliente(clienta.id);
+			busquedaClienta.setCustomValidity("");
+			visSaldo.innerText = "$ "+formatearMonto(saldo,3,2);
+			saldoClienta = saldo;
+		} catch (err) {
+			busquedaClienta.setCustomValidity("Error de carga, intente nuevamente.");
+			visSaldo.innerText = "Error de carga";
+			saldoClienta = 0;
+			throw err;
+		} finally {
+			verificarMontoIngresado();
+		}
 	}
 
 	busquedaClienta.addEventListener("input",(event)=>{
@@ -294,7 +374,7 @@ const popupRegistrarPago = (()=>{
 		}
 	}
 
-	self.formulario.addEventListener("submit",async (event)=>{
+	self.formulario.addEventListener("submit",(event)=>{
 		event.preventDefault();
 		const clienta = opcionesClientes[busquedaClienta.value];
 		const infoForm = new FormData(self.formulario);
@@ -361,13 +441,14 @@ const popupDatosCliente = (()=>{
 
 	const tituloPopup = document.getElementById("DC-nombre");
 	const visualizacionTelefonoDni = document.getElementById("DC-numYDni");
-	self.abrir = async(infoCliente)=>{
+	self.abrir = (infoCliente)=>{
 		self.submitted = false;
 		self.clienteActual = infoCliente;
 		tituloPopup.innerText = infoCliente.nombre;
 		visualizacionTelefonoDni.innerText = "+"+infoCliente.telefono+" - "+(infoCliente.dni != undefined ? "DNI "+infoCliente.dni : "Sin DNI registrado");
 
 		self.popup.showModal();
+
 		refrescarSaldo();
 		cargarEntregas();
 		cargarMovimientos();
@@ -380,117 +461,192 @@ const popupDatosCliente = (()=>{
 	const saldoCliente = document.getElementById("DC-saldo");
 	const descripcionSaldo = document.getElementById("DC-comprasPagos")
 	async function refrescarSaldo() {
-		const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id);
-		saldoCliente.innerText = "$ "+formatearMonto(saldo,3,2);
-		descripcionSaldo.innerText = "Compras $ "+formatearMonto(compras,3,2)+" - Pagos $ "+formatearMonto(pagos,3,2);
+		saldoCliente.innerText = "Cargando...";
+		descripcionSaldo.innerText = "Cargando...";
+		try {
+			const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id);
+			saldoCliente.innerText = "$ "+formatearMonto(saldo,3,2);
+			descripcionSaldo.innerText = "Compras $ "+formatearMonto(compras,3,2)+" - Pagos $ "+formatearMonto(pagos,3,2);
+		} catch (err) {
+			saldoCliente.innerText = "Error de carga";
+			descripcionSaldo.innerText = "Error de carga";
+			throw err;
+		} finally {
+			//uuu
+		}
 	}
 
 	const listaEntregas = document.getElementById("DC-listaEntregas");
 	async function cargarEntregas() {
-		const entregas = await getEntregasCliente(self.clienteActual.id);
-		const formateadorFecha = Intl.DateTimeFormat();
-		listaEntregas.innerHTML = ""
+		listaEntregas.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaEntregas.append(elementoCarga);
+
+		let entregas = undefined;
+		try {
+			entregas = await getEntregasCliente(self.clienteActual.id);
+		} catch (err) {
+			listaEntregas.appendChild(crearElementoErr("No se han podido cargar las entregas: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+
 		entregas.forEach((entrega)=>{
 			if (entrega.estado != "abierta") {
 				return;
 			}
-			const cantPrendas = entrega.entrega_items.length;
-			
-			const nuevaEntrega = document.createElement("li");
-			nuevaEntrega.classList.toggle("leftRightFlex");
-			nuevaEntrega.innerHTML = `
-				<div>
-					<p>${cantPrendas.toString()} ${cantPrendas != 1 ? "prendas" : "prenda"} - ${formateadorFecha.format(entrega.fecha)}</p>
-				</div>
-				<a href="#">Confirmar ></a>
-			`;
-			
-			const botonConfirmar = nuevaEntrega.querySelector("a");
-			botonConfirmar.addEventListener("click",(event)=>{
-				event.preventDefault();
-				popupConfirmarEntrega.abrir(entrega);
-				popupConfirmarEntrega.popup.addEventListener("close",(event)=>{
-					if (!popupConfirmarEntrega.submitted) {
-						return;
-					}
-					refrescarSaldo();
-					cargarEntregas();
-					cargarMovimientos();
-					self.submitted = true;
-				},{once:true})
-			});
-
-			listaEntregas.appendChild(nuevaEntrega);
+			listaEntregas.appendChild(crearElementoEntrega(entrega));
 		});
+	}
+
+	const formateadorFecha = Intl.DateTimeFormat();
+	function crearElementoEntrega(infoEntrega) {
+		const cantPrendas = infoEntrega.entrega_items.length;
+		
+		const nuevaEntrega = document.createElement("li");
+		nuevaEntrega.classList.toggle("leftRightFlex");
+		
+		const divLeft = document.createElement("div");
+		nuevaEntrega.appendChild(divLeft);
+
+		const info = document.createElement("p")
+		info.innerText = 
+			cantPrendas.toString()
+			+(cantPrendas != 1 ? " prendas" : " prenda")
+			+" - "
+			+formateadorFecha.format(infoEntrega.fecha);
+		divLeft.appendChild(info);
+
+		
+		const botonConfirmar = document.createElement("a");
+		botonConfirmar.innerText = "Confirmar >";
+		botonConfirmar.href = "#";
+		nuevaEntrega.appendChild(botonConfirmar);
+		botonConfirmar.addEventListener("click",(event)=>{
+			event.preventDefault();
+			popupConfirmarEntrega.abrir(infoEntrega,self.clienteActual);
+			popupConfirmarEntrega.popup.addEventListener("close",(event)=>{
+				if (!popupConfirmarEntrega.submitted) {
+					return;
+				}
+				refrescarSaldo();
+				cargarEntregas();
+				cargarMovimientos();
+				self.submitted = true;
+			},{once:true})
+		});
+		return nuevaEntrega;
 	}
 
 	const listaMovimientos = document.getElementById("DC-listaMovimientos");
 	async function cargarMovimientos() {
-		const pagos = await getPagosCliente(self.clienteActual.id);
-		const entregas = await getEntregasCliente(self.clienteActual.id);
-		let movimientosCargados = [];
-		
-		const formateadorFecha = new Intl.DateTimeFormat();
-		pagos.forEach((pago) => {
-			const nuevoPago = document.createElement("li");
-			nuevoPago.innerHTML = `
-				<div>
-					<h4>Pago - ${pago.medio}</h4>
-					<p>${formateadorFecha.format(pago.fecha)} - ${pago.observacion != undefined ? pago.observacion : "Sin observacion"}</p>
-				</div>
-				<p>- $ ${formatearMonto(pago.monto,3,2)}</p>
-			`;
-			nuevoPago.classList.add("leftRightFlex");
-			movimientosCargados.push({
-				elemento:nuevoPago,
-				fecha:pago.fecha
-			});
-		});
+		listaMovimientos.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaMovimientos.appendChild(elementoCarga);
 
-		await Promise.all(entregas.map( async (entrega) => {
-			if (entrega.estado == "abierta") {
-				return;
-			}
-			let monto = 0;
-			let nombres = "";
-			let cantItems = 0;
-			
-			const prendasEntrega = await getPrendasInEntrega(entrega.id)
-			entrega.entrega_items.forEach((item)=>{
-				if (item.estado == "devuelta") {
+		let pagos,entregas = undefined;
+		let movimientosCargados = [];
+		try {
+			pagos = await getPagosCliente(self.clienteActual.id);
+			entregas = await getEntregasCliente(self.clienteActual.id);
+			pagos.forEach((pago) => {
+				movimientosCargados.push({
+					elemento:crearElementoMovimientoPago(pago),
+					fecha:pago.fecha
+				});
+			});
+			await Promise.all(entregas.map(async (entrega) => {
+				if (entrega.estado == "abierta") {
 					return;
 				}
-				const infoPrenda = prendasEntrega.find((prenda)=>{return prenda.id == item.producto_id;});
-				monto += item.precio_unitario;
-				cantItems++;
-				if (cantItems != 1) {
-					nombres += ", ";
-				}
-				nombres += infoPrenda.descripcion;
-			});
-			const nuevaEntrega = document.createElement("li");
-			nuevaEntrega.innerHTML = `
-				<div>
-					<h4>Compra - ${cantItems} prenda${cantItems != 1 ? "s" : ""}</h4>
-					<p>${formateadorFecha.format(entrega.fecha)} - ${nombres}</p>
-				</div>
-				<p>+ $ ${formatearMonto(monto,3,2)}</p>
-			`;
-			nuevaEntrega.classList.add("leftRightFlex");
-			movimientosCargados.push({
-				elemento:nuevaEntrega,
-				fecha:entrega.fecha
-			});
-		}));
-		
+				const prendasEntrega = await getPrendasInEntrega(entrega.id)
+				movimientosCargados.push({
+					elemento:crearElementoMovimientoCompra(entrega,prendasEntrega),
+					fecha:entrega.fecha
+				});
+			}));
+		} catch (err) {
+			listaEntregas.appendChild(crearElementoErr("No se han podido cargar los movimientos: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+
 		movimientosCargados.sort((a,b)=>{
-			return  b.fecha.getTime() - a.fecha.getTime();
+			return b.fecha.getTime() - a.fecha.getTime();
 		});
 
-		listaMovimientos.innerHTML = "";
 		movimientosCargados.forEach((info)=>{
 			listaMovimientos.appendChild(info.elemento);
 		});
+	}
+
+	function crearElementoMovimientoCompra(infoEntrega,prendasEntrega) {
+		let monto = 0;
+		let nombres = "";
+		let cantItems = 0;
+		infoEntrega.entrega_items.forEach((item)=>{
+			if (item.estado == "devuelta") {
+				return;
+			}
+			monto += item.precio_unitario;
+			cantItems++;
+
+			const infoPrenda = prendasEntrega.find((prenda)=>{return prenda.id == item.producto_id;});
+			if (cantItems != 1) {
+				nombres += ", ";
+			}
+			nombres += infoPrenda.descripcion;
+		});
+
+		const nuevaEntrega = document.createElement("li");
+		nuevaEntrega.classList.add("leftRightFlex");
+
+		const divLeft = document.createElement("div");
+		nuevaEntrega.appendChild(divLeft);
+
+		const titulo = document.createElement("h4");
+		titulo.innerText = 
+			"Compra - "
+			+cantItems.toString()
+			+(cantItems != 1 ? " prendas" : "prenda");
+		divLeft.appendChild(titulo);
+
+		const desc = document.createElement("p");
+		desc.innerText = formateadorFecha.format(infoEntrega.fecha)+" - "+nombres;
+		divLeft.appendChild(desc);
+
+		const visMonto = document.createElement("p");
+		visMonto.innerText = "+ $ "+formatearMonto(monto,3,2);
+		nuevaEntrega.appendChild(visMonto);
+		
+		return nuevaEntrega;
+	}
+
+	function crearElementoMovimientoPago(infoPago) {		
+		const nuevoPago = document.createElement("li");
+		nuevoPago.classList.add("leftRightFlex");
+		
+		const divLeft = document.createElement("div");
+		nuevoPago.appendChild(divLeft);
+
+		const titulo = document.createElement("h4");
+		titulo.innerText = "Pago - "+infoPago.medio;
+		divLeft.appendChild(titulo);
+
+		const desc = document.createElement("p");
+		desc.innerText = 
+			formateadorFecha.format(infoPago.fecha)
+			+" - "
+			+(infoPago.observacion != undefined ? infoPago.observacion : "Sin observacion");
+		divLeft.appendChild(desc);
+
+		const monto = document.createElement("p");
+		monto.innerText = "- $ "+formatearMonto(infoPago.monto,3,2);
+		nuevoPago.appendChild(monto);
+
+		return nuevoPago;
 	}
 
 	document.getElementById("DC-nuevaEntrega").addEventListener("click",(event)=>{

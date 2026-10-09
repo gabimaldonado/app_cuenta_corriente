@@ -12,102 +12,161 @@ const paginaInicio = (()=>{
 	const listaEntregas = document.getElementById("PI-listaEntregas");
 	const cantEntregas = document.getElementById("PI-cantEntregas");
 	async function cargarEntregas() {
-		const entregas = await getEntregas();
 		listaEntregas.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaEntregas.appendChild(elementoCarga);
+		cantEntregas.innerText = "Cargando..."
+
+		let entregas = undefined;
 		let entregasAbiertas = 0;
-		entregas.forEach(async (info)=>{
-			if (info.estado != "abierta") {
-				return;
-			}
-			entregasAbiertas++;
-			const cantPrendas = info.entrega_items.length;
-			const diffTiempo = info.fecha.getTime() - Date.now();
-			const formateadorRelativo = new Intl.RelativeTimeFormat(undefined);
-				
-			let unidad = undefined;
-			let tiempo = undefined;
-			if (Math.abs(diffTiempo) >= 1000 * 60 * 60 * 24) { //diferencia de dias
-				tiempo = diffTiempo/1000/60/60/24;
-				unidad = "day";
-			} else if (Math.abs(diffTiempo) >= 1000 * 60 * 60) { //diferencia de horas
-				tiempo = diffTiempo/1000/60/60;
-				unidad = "hour";
-			} else if (Math.abs(diffTiempo) >= 1000 * 60) { //diferencia de minutos
-				tiempo = diffTiempo/1000/60;
-				unidad = "minute";
-			} else { //diferencia de segundos
-				tiempo = diffTiempo/1000;
-				unidad = "second";
-			}
-			
-			let cliente = await getClienteId(info.cliente_id);
+		try {
+			entregas = await getEntregas();
+			await Promise.all(entregas.map(async (info)=>{
+				if (info.estado != "abierta") {
+					return;
+				}
+				entregasAbiertas++;
 
-			const elementoLista = document.createElement("li");
-			elementoLista.classList.toggle("prueba");
-			
-			elementoLista.innerHTML = `
-				<div>
-					<h3>${cliente.nombre}</h3>
-					<p>${cantPrendas.toString()} ${cantPrendas != 1 ? "prendas" : "prenda"} - ${formateadorRelativo.format(Math.round(tiempo),unidad)}</p>
-				</div>
-				<a href="#">Confirmar ></a>
-			`;
-			
-			const botonConfirmar = elementoLista.querySelector("a");
-			botonConfirmar.addEventListener("click",(event)=>{
-				event.preventDefault();
-				popupConfirmarEntrega.abrir(info);
-				popupConfirmarEntrega.popup.addEventListener("close",(event)=>{
-					if (!popupConfirmarEntrega.submitted) {
-						return;
-					}
-					cargarEntregas();
-					cargarDeudores();
-				},{once:true});
-			});
-
-			listaEntregas.appendChild(elementoLista);
-		})
+				let cliente = await getClienteId(info.cliente_id);
+				listaEntregas.appendChild(crearElementoEntrega(cliente,info));
+			}));
+		} catch (err) {
+			listaEntregas.appendChild(crearElementoErr("No se han podido cargar todas las entregas: "+err));
+			cantEntregas.innerText = "Error de carga"
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
 		cantEntregas.innerText = 
 			entregasAbiertas.toString()+" "
 			+(entregasAbiertas != 1 ? "Entregas abiertas" : "Entrega abierta");
+	}
+
+	function crearElementoEntrega(cliente,entrega) {
+		const cantPrendas = entrega.entrega_items.length;
+		const diffTiempo = entrega.fecha.getTime() - Date.now();
+		const formateadorRelativo = new Intl.RelativeTimeFormat(undefined);
+			
+		let unidad = undefined;
+		let tiempo = undefined;
+		if (Math.abs(diffTiempo) >= 1000 * 60 * 60 * 24) { //diferencia de dias
+			tiempo = diffTiempo/1000/60/60/24;
+			unidad = "day";
+		} else if (Math.abs(diffTiempo) >= 1000 * 60 * 60) { //diferencia de horas
+			tiempo = diffTiempo/1000/60/60;
+			unidad = "hour";
+		} else if (Math.abs(diffTiempo) >= 1000 * 60) { //diferencia de minutos
+			tiempo = diffTiempo/1000/60;
+			unidad = "minute";
+		} else { //diferencia de segundos
+			tiempo = diffTiempo/1000;
+			unidad = "second";
+		}
+			
+		const elementoLista = document.createElement("li");
+		elementoLista.classList.toggle("prueba");
+		
+		const divisorInfoCliente = document.createElement("div");
+		elementoLista.appendChild(divisorInfoCliente);
+		
+		const nombreCliente = document.createElement("h3");
+		nombreCliente.innerText = cliente.nombre;
+		divisorInfoCliente.appendChild(nombreCliente);
+
+		const visCantPrendas = document.createElement("p");
+		visCantPrendas.innerText = 
+			cantPrendas.toString()
+			+" "
+			+(cantPrendas != 1 ? "prendas" : "prenda")
+			+" - "
+			+formateadorRelativo.format(Math.round(tiempo),unidad);
+		divisorInfoCliente.appendChild(visCantPrendas);
+
+			
+		const botonConfirmar = document.createElement("a");
+		botonConfirmar.innerText = "Confirmar >";
+		botonConfirmar.href = "#"
+		botonConfirmar.addEventListener("click",(event)=>{
+			event.preventDefault();
+			popupConfirmarEntrega.abrir(entrega,cliente);
+			popupConfirmarEntrega.popup.addEventListener("close",(event)=>{
+				if (!popupConfirmarEntrega.submitted) {
+					return;
+				}
+				cargarEntregas();
+				cargarDeudores();
+			},{once:true});
+		});
+		elementoLista.appendChild(botonConfirmar);
+		return elementoLista;
 	}
 
 	const listaDeudas = document.getElementById("PI-listaDeudores");
 	const montoTotal = document.getElementById("PI-montoTotal");
 	const cantClientes = document.getElementById("PI-cantClientes");
 	async function cargarDeudores() {
-		const deudas = await getDeudas();
+		listaDeudas.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaDeudas.appendChild(elementoCarga);
+		montoTotal.innerText = "Cargando...";
+		cantClientes.innerText = "Cargando...";
+		
+		let deudas = undefined 
+		let cantDeudores = 0;
+		let deudaTotal = 0;
+		try {
+			deudas = await getDeudas();
+			await Promise.all(deudas.map(async (info)=>{
+				if (info.deuda <= 0) {
+					return;
+				}
+				cantDeudores++;
+				deudaTotal += info.deuda;
+				let infoCliente = await getClienteId(info.cliente_id);
+
+				listaDeudas.appendChild(crearElementoDeudor(info,infoCliente));
+			}));
+		} catch (err) {
+			listaDeudas.appendChild(crearElementoErr("No se han podido cargar todos los deudores: "+err));
+			montoTotal.innerText = "Error de carga";
+			cantClientes.innerText = "Error de carga";
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
 		deudas.sort((infoA,infoB) => {
 			return (infoB.deuda-infoA.deuda);
 		});
-		listaDeudas.innerHTML = "";
-		let cantDeudores = 0;
-		let deudaTotal = 0;
-		deudas.forEach(async (info)=>{
-			if (info.deuda <= 0) {
-				return;
-			}
-			cantDeudores++;
-			deudaTotal += info.deuda;
-			let infoCliente = await getClienteId(info.cliente_id);
-			const elementoLista = document.createElement("li");
-			elementoLista.classList.toggle("deudor");
-			elementoLista.innerHTML = `
-				<div>
-					<img src="#">
-					<h3 style="display:inline">${infoCliente.nombre}</h3>
-				</div>
-				<p class="precioDeuda">$ ${formatearMonto(info.deuda,3,1)}</p>
-			`;
 
-			listaDeudas.appendChild(elementoLista);
-		});
+		
 		montoTotal.innerText = "$ "+formatearMonto(deudaTotal,3,2);
 		cantClientes.innerText = 
 			"Entre "
 			+cantDeudores+" "
 			+(cantDeudores != 1 ? "clientes con saldos pendientes" : "cliente con saldo pendiente");
+	}
+
+	function crearElementoDeudor(infoDeuda,infoCliente) {
+		const elementoLista = document.createElement("li");
+		elementoLista.classList.toggle("deudor");
+		
+		const divisorInfoCliente = document.createElement("div");
+		elementoLista.appendChild(divisorInfoCliente);
+
+		const imgIcon = document.createElement("img");
+		imgIcon.src = "#";
+		divisorInfoCliente.appendChild(imgIcon);
+
+		const visNombreCliente = document.createElement("h3");
+		visNombreCliente.innerText = infoCliente.nombre;
+		divisorInfoCliente.appendChild(visNombreCliente);
+
+		const visDeuda = document.createElement("p");
+		visDeuda.innerText = "$ "+formatearMonto(infoDeuda.deuda,3,2);
+		visDeuda.classList.add("precioDeuda");
+		elementoLista.appendChild(visDeuda);
+
+		return elementoLista;
 	}
 
 	document.getElementById("PI-nuevaEntrega").addEventListener("click",(event)=>{
@@ -179,11 +238,23 @@ const paginaClientes = (()=>{
 	let busquedaClientes = "";
 	const listaClientes = document.getElementById("PC-listaClientes");
 	async function cargarClientes() {
-		const tipoFiltro = getFiltro();
-		const clientes = await getClientes();
-		const entregas = await getEntregas();
-		const deudas = await getDeudas();
 		listaClientes.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaClientes.appendChild(elementoCarga);
+		
+		const tipoFiltro = getFiltro();
+		let clientes,entregas,deudas = undefined;
+		try {
+			clientes = await getClientes();
+			entregas = await getEntregas(); //necesario para el filtrado
+			deudas = await getDeudas();
+		} catch (err) {
+			listaClientes.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+	
 		clientes.forEach((info)=>{
 			let deuda = deudas.find((infoDeuda)=>{
 				return infoDeuda.cliente_id == info.id;
@@ -199,28 +270,50 @@ const paginaClientes = (()=>{
 			) {
 				return;
 			}
-			const elementoLista = document.createElement("li");
-			elementoLista.classList.toggle("cliente");
-			elementoLista.innerHTML = `
-				<div>
-					<img src="#">
-					<h3 style="display:inline">${info.nombre}</h3>
-					<p>+ ${info.telefono}</p>
-				</div>
-				<p class="${deuda > 0 ? "precioDeuda" : ""}">${deuda > 0 ? "$ "+formatearMonto(deuda,3,1) : "Al dia"}</p>
-			`;
-
-			listaClientes.appendChild(elementoLista);
-			elementoLista.addEventListener("click",(event)=>{
-				popupDatosCliente.abrir(info);
-				popupDatosCliente.popup.addEventListener("close",(event)=>{
-					if (!popupDatosCliente.submitted) {
-						return;
-					}
-					cargarClientes();
-				},{once:true});
-			});
+			
+			listaClientes.appendChild(crearElementoCliente(info,deuda));
 		});
+	}
+
+	function crearElementoCliente(infoCliente, deuda) {
+		const elementoLista = document.createElement("li");
+		elementoLista.classList.toggle("cliente");
+		
+		const divisorInfoCliente = document.createElement("div");
+		elementoLista.appendChild(divisorInfoCliente);
+
+		const imgIcon = document.createElement("img");
+		imgIcon.src = "#";
+		divisorInfoCliente.appendChild(imgIcon);
+
+		const visNombreCliente = document.createElement("h3");
+		visNombreCliente.innerText = infoCliente.nombre;
+		divisorInfoCliente.appendChild(visNombreCliente);
+
+		const visTelefono = document.createElement("p");
+		visTelefono.innerText = "+ "+infoCliente.telefono;
+		divisorInfoCliente.appendChild(visTelefono);
+
+		const visDeuda = document.createElement("p");
+		if (deuda > 0) {
+			visDeuda.classList.add("precioDeuda");
+			visDeuda.innerText = "$ "+formatearMonto(deuda,3,1);
+		} else {
+			visDeuda.innerText = "Al dia";
+		}
+		elementoLista.appendChild(visDeuda);
+
+		elementoLista.addEventListener("click",(event)=>{
+			popupDatosCliente.abrir(infoCliente);
+			popupDatosCliente.popup.addEventListener("close",(event)=>{
+				if (!popupDatosCliente.submitted) {
+					return;
+				}
+				cargarClientes();
+			},{once:true});
+		});
+
+		return elementoLista;
 	}
 
 	const inputBusqueda = document.getElementById("PC-busquedaClientes")
@@ -284,9 +377,21 @@ const paginaPrendas = (()=>{
 	let busquedaPrendas = "";
 	const listaPrendas = document.getElementById("PP-listaPrendas");
 	async function cargarPrendas() {
-		const prendas = await getPrendas();
-		const tipoFiltro = getFiltro();
 		listaPrendas.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		listaPrendas.appendChild(elementoCarga);
+
+		const tipoFiltro = getFiltro();
+		let prendas = undefined;
+		try {
+			prendas = await getPrendas();
+		} catch (err) {
+			listaPrendas.appendChild(crearElementoErr("No se han podido cargar las prendas: "+err));
+			throw err;
+		} finally {
+			elementoCarga.remove();
+		}
+		
 		prendas.forEach((prenda) => {
 			if (infoFiltrada(tipoFiltro,prenda)) {
 				return;
@@ -298,29 +403,50 @@ const paginaPrendas = (()=>{
 			) {
 				return;
 			}
-			const liPrenda = document.createElement("li");
-			liPrenda.innerHTML = `
-				<img src="#">
-				<div>
-					${crearDivInfoPrenda(prenda).innerHTML}	
-				</div>
-				<div class="leftRightFlex">
-					<p>$ ${formatearMonto(prenda.precio,3,2)}</p>
-					<p class="${prenda.stock > 0 ? "" : "precioDeuda"}">${prenda.stock > 0 ? "Stock: "+prenda.stock : "Sin stock"}</p>
-				</div>
-			`;
-			liPrenda.classList.add("prenda");
-			liPrenda.addEventListener("click",(event)=>{
-				popupDatosPrenda.abrir(prenda);
-				popupDatosPrenda.popup.addEventListener("close",(event)=>{
-					if (!popupDatosPrenda.submitted) {
-						return;
-					}
-					cargarPrendas();
-				},{once:true})
-			});
-			listaPrendas.appendChild(liPrenda);
+			
+			listaPrendas.appendChild(crearElementoPrenda(prenda));
 		});
+	}
+
+	function crearElementoPrenda(infoPrenda) {
+		const elementoLista = document.createElement("li");
+		elementoLista.classList.add("prenda");
+
+		const imgPrincipal = document.createElement("img");
+		imgPrincipal.src = "#";
+		elementoLista.appendChild(imgPrincipal);
+
+		const divPrenda = crearDivInfoPrenda(infoPrenda);
+		elementoLista.appendChild(divPrenda);
+
+		const divisorStockMonto = document.createElement("div");
+		divisorStockMonto.classList.add("leftRightFlex");
+		elementoLista.appendChild(divisorStockMonto);
+
+		const monto = document.createElement("p");
+		monto.innerText = "$ "+formatearMonto(infoPrenda.precio,3,2);
+		divisorStockMonto.appendChild(monto);
+
+		const stock = document.createElement("p");
+		if (infoPrenda.stock > 0) {
+			stock.innerText = "Stock: "+infoPrenda.stock;
+		} else {
+			stock.classList.add("precioDeuda");
+			stock.innerText = "Sin stock";
+		}
+		divisorStockMonto.appendChild(stock);
+
+		elementoLista.addEventListener("click",(event)=>{
+			popupDatosPrenda.abrir(infoPrenda);
+			popupDatosPrenda.popup.addEventListener("close",(event)=>{
+				if (!popupDatosPrenda.submitted) {
+					return;
+				}
+				cargarPrendas();
+			},{once:true})
+		});
+
+		return elementoLista;
 	}
 
 
