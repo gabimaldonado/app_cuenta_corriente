@@ -14,26 +14,56 @@ $metodo = $_SERVER["REQUEST_METHOD"];
 
 if ($metodo === "GET") {
 
-    if (isset($_GET["cliente_id"])) {
+    // Según lo que pida el cliente, se elige qué entregas buscar
+    if (isset($_GET["id"])) {
+        $consulta = $conexion->prepare("SELECT * FROM entregas WHERE id = :id");
+        $consulta->execute([":id" => $_GET["id"]]);
+    } elseif (isset($_GET["cliente_id"])) {
         $consulta = $conexion->prepare(
             "SELECT * FROM entregas WHERE cliente_id = :cliente_id ORDER BY fecha DESC"
         );
         $consulta->execute([":cliente_id" => $_GET["cliente_id"]]);
-        echo json_encode($consulta->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
-        exit();
-    }
-
-    if (isset($_GET["estado"])) {
+    } elseif (isset($_GET["estado"])) {
         $consulta = $conexion->prepare(
             "SELECT * FROM entregas WHERE estado = :estado ORDER BY fecha DESC"
         );
         $consulta->execute([":estado" => $_GET["estado"]]);
-        echo json_encode($consulta->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
+    } else {
+        $consulta = $conexion->query("SELECT * FROM entregas ORDER BY fecha DESC");
+    }
+    $entregas = $consulta->fetchAll(PDO::FETCH_ASSOC);
+
+    // A cada entrega se le agregan sus prendas, y los números se devuelven como números
+    $consultaItems = $conexion->prepare(
+        "SELECT id, entrega_id, producto_id, precio_unitario, estado
+         FROM entrega_items WHERE entrega_id = :entrega_id ORDER BY id"
+    );
+    foreach ($entregas as $i => $entrega) {
+        $consultaItems->execute([":entrega_id" => $entrega["id"]]);
+        $items = $consultaItems->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($items as $j => $item) {
+            $items[$j]["id"]              = (int) $item["id"];
+            $items[$j]["entrega_id"]      = (int) $item["entrega_id"];
+            $items[$j]["producto_id"]     = (int) $item["producto_id"];
+            $items[$j]["precio_unitario"] = (float) $item["precio_unitario"];
+        }
+        $entregas[$i]["id"]            = (int) $entrega["id"];
+        $entregas[$i]["cliente_id"]    = (int) $entrega["cliente_id"];
+        $entregas[$i]["entrega_items"] = $items;
+    }
+
+    // Con ?id= se devuelve una sola entrega (un objeto) o 404, como en la Semana 7
+    if (isset($_GET["id"])) {
+        if (count($entregas) === 0) {
+            http_response_code(404);
+            echo json_encode(["error" => "No existe esa entrega"], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+        echo json_encode($entregas[0], JSON_UNESCAPED_UNICODE);
         exit();
     }
 
-    $consulta = $conexion->query("SELECT * FROM entregas ORDER BY fecha DESC");
-    echo json_encode($consulta->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE);
+    echo json_encode($entregas, JSON_UNESCAPED_UNICODE);
     exit();
 }
 
