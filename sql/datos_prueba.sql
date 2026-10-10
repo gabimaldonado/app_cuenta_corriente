@@ -24,13 +24,14 @@ INSERT INTO usuarios (nombre, email, password_hash) VALUES
 -- 2. CLIENTAS
 --    No se escribe el id: MySQL les pone 1, 2, 3 y 4 solo, en este orden.
 --    NULL = ese dato se deja vacío.
-
-INSERT INTO clientes (nombre, telefono, dni, direccion, notas) VALUES
-('Laura Gómez',     '5492914000001', '30111222', 'Belgrano 123',  'Prefiere talle M'),        -- id 1
-('Marta Fernández', '5492914000002', '28333444', 'Alsina 456',    NULL),                      -- id 2
-('Sofía Ruiz',      '5492914000003', '35555666', 'Sarmiento 789', 'Paga por transferencia'),  -- id 3
-('Carla Pérez',     '5492914000004', NULL,       NULL,            'Clienta nueva');           -- id 4
-
+--    Las coordenadas son aproximadas; en la app las completa la
+--    geocodificación. Carla no tiene ciudad: no aparece en el mapa.
+INSERT INTO clientes (nombre, telefono, dni, direccion, notas, ciudad, latitud, longitud) VALUES
+('Laura Gómez',     '5492914000001', '30111222', 'Belgrano 123',  'Prefiere talle M',       'Bahía Blanca', -38.718300, -62.266300),  -- id 1
+('Marta Fernández', '5492914000002', '28333444', 'Alsina 456',    NULL,                     'Punta Alta',   -38.879000, -62.075000),  -- id 2
+('Sofía Ruiz',      '5492914000003', '35555666', 'Sarmiento 789', 'Paga por transferencia', 'Tornquist',    -38.100000, -62.233300),  -- id 3
+('Carla Pérez',     '5492914000004', NULL,       NULL,            'Clienta nueva',          NULL,           NULL,       NULL);        -- id 4
+ 
 
 
 -- 3. PRENDAS del catálogo (también se numeran solas, del 1 al 8)

@@ -50,6 +50,9 @@ CREATE TABLE clientes (
   dni        VARCHAR(15)  NULL UNIQUE,        -- DNI (opcional, pero no puede repetirse)
   direccion  VARCHAR(150) NULL,               -- dirección (opcional)
   notas      VARCHAR(255) NULL,               -- cualquier observación (opcional)
+  ciudad     VARCHAR(100) NULL,               -- ciudad (opcional); se convierte en coordenadas
+  latitud    DECIMAL(9,6) NULL,               -- las completa la geocodificación (servicio externo)
+  longitud   DECIMAL(9,6) NULL,               -- si el servicio no responde, quedan vacías
   activo     TINYINT(1)   NOT NULL DEFAULT 1  -- 1 = activa, 0 = dada de baja
                                               -- (no se borra para no perder lo que compró y pagó)
 ) ENGINE=InnoDB;
