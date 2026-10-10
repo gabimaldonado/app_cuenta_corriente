@@ -16,7 +16,7 @@ function irAlLogin() {
 
 // 1. Sin token no se puede estar acá
 if (!token) {
-  irAlLogin();
+	irAlLogin();
 }
 
 // 2. Comprobar con la API que el token sea válido (no vencido ni cerrado)
@@ -29,9 +29,9 @@ async function comprobarSesion() {
       irAlLogin();   // vencido o inválido
       return;
     }
-    const usuario = await respuesta.json();
-    const lugarNombre = document.querySelector("#nombreUsuario");
-    if (lugarNombre) lugarNombre.textContent = usuario.nombre;
+    //const usuario = await respuesta.json();
+    //const lugarNombre = document.querySelector("#nombreUsuario");
+    //if (lugarNombre) lugarNombre.textContent = usuario.nombre;
   } catch (error) {
     console.error("No se pudo comprobar la sesión", error);
   }
