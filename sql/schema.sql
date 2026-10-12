@@ -66,7 +66,9 @@ CREATE TABLE productos (
   talle        VARCHAR(10)   NULL,                                 -- ej: "M" o "38"
   color        VARCHAR(30)   NULL,                                 -- ej: "Azul"
   precio       DECIMAL(10,2) NOT NULL CHECK (precio >= 0),         -- precio con 2 decimales; no puede ser negativo
-  stock        INT           NOT NULL DEFAULT 0 CHECK (stock >= 0) -- cuántas hay en el local; no puede ser negativo
+  stock        INT           NOT NULL DEFAULT 0 CHECK (stock >= 0), -- cuántas hay en el local; no puede ser negativo
+  foto         VARCHAR(255)  NULL,                                  -- link a la foto de la prenda (opcional)
+  activo       TINYINT(1)    NOT NULL DEFAULT 1                     -- 1 = se vende, 0 = dada de baja (no se borra)
 ) ENGINE=InnoDB;
 
 
