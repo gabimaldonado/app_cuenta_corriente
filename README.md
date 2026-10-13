@@ -128,9 +128,9 @@ _(A completar cuando la app esté en la nube: proveedor, por qué se eligió y p
 ---
 
 ## 7. Limitaciones conocidas
--- **Una entrega abierta no se puede editar ni cancelar desde la API:** solo se crea y se confirma.
--- **La confirmación es de todo o nada:** se decide el destino de todas las prendas de la entrega a la vez.
--- **Las entregas abiertas no vencen:** pueden quedar abiertas indefinidamente.
+- **Una entrega abierta no se puede editar ni cancelar desde la API:** solo se crea y se confirma.
+- **La confirmación es de todo o nada:** se decide el destino de todas las prendas de la entrega a la vez.
+- **Las entregas abiertas no vencen:** pueden quedar abiertas indefinidamente.
 
 _(A completar al final, con lo que quedó sin hacer o funciona con alguna restricción.)_
 
