@@ -117,9 +117,23 @@ const popupConfirmarEntrega = (()=>{
 		descFooter.innerText = "Se queda "+seQueda.toString()+" - Devuelve "+devuelve.toString()+" (vuelven al stock)";
 	}
 
-	self.formulario.addEventListener("submit",(event)=>{
+		// Aviso de error que se ve arriba del formulario si la API rechaza la confirmación
+	const avisoError = document.createElement("div");
+	self.formulario.before(avisoError);
+
+	self.popup.addEventListener("close", ()=>{
+		avisoError.innerHTML = "";
+	});
+
+	self.formulario.addEventListener("submit", async (event)=>{
 		event.preventDefault();
-		confirmarEntrega(self.entregaActual.id,getEstadoPrendas());
+		avisoError.innerHTML = "";
+		try {
+			await confirmarEntrega(self.entregaActual.id, getEstadoPrendas());
+		} catch (err) {
+			avisoError.appendChild(crearElementoErr("No se pudo confirmar la entrega: " + err.message));
+			return;
+		}
 		self.submitted = true;
 		self.popup.close();
 	});
@@ -276,10 +290,16 @@ const popupNuevaEntrega = (()=>{
 		}
 	});
 
-	self.formulario.addEventListener("submit",(event)=>{
+		self.formulario.addEventListener("submit", async (event)=>{
 		event.preventDefault();
 		const clienta = opcionesClientes[busquedaClienta.value];
-		postEntrega(clienta,self.prendasSeleccionadas);
+		contenedorError.innerHTML = "";
+		try {
+			await postEntrega(clienta, self.prendasSeleccionadas);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo guardar la entrega: " + err.message));
+			return;
+		}
 		self.submitted = true;
 		self.popup.close();
 	});
