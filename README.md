@@ -161,5 +161,12 @@ El contrato completo de estos endpoints está en docs/contrato_entregas.md.
 -- **Consultas preparadas y errores controlados.** Todos los datos que llegan del cliente se usan como parámetros de PDO. Si la base falla, la respuesta es un 500 con un mensaje genérico y el detalle va a error_log().
 -- **Pantallas:** [COMPLETAR cuando estén conectadas: cómo se usan «Nueva entrega» y «Confirmar compra» y cómo se muestran al usuario los errores de la API.]
 
+### Diseño general del sitio
+
+- El sitio web, que actua como interfaz entre el usuario y el api, esta casi completamente implementado desde **una sola pagina html**: index.html. Esta misma teniendo dentro de si **submenus** y **ventanas emergentes** implementadas desde JavaScript. Este diseño permite observar todos los datos del servidor y realizar cualquier cambio necesario sin necesitar en ningun momento cambiar de pagina.
+- **Submenus:** La pagina permite a traves de JavaScript observar 3 distintos **submenus**, accessibles desde el menu de navegacion en el footer, siendo estos menus: ***Inicio***, ***Clientes***, y ***Prendas***. Cada uno de los submenus tiene como rol mostrar la informacion basica de sus endpoints relacionados, con botones para indagar mas a fondo.
+- **Ventas Emergentes:** La edicion/creacion de datos en su gran mayoria se encuentra detras de **ventanas emergentes**, accessibles desde los varios botones presentes en los submenus del sitio. Este modelo de ventanas emergentes permite mantener los **menus principales limpios**, moviendo muchos formularios de ingreso de datos e informacion especifica hacia lugares mas apropiados, sin la necesidad de crear una pagina nueva.
+- **Modelo AJAX:** Todos los menus y ventanas obtienen su informacion a traves de solicitudes realizadas en JavaScript de forma asincronica, con las regulaciones y manejo de errores necesarios. Esto permite que el sitio tenga un modelo de funcionamiento AJAX, donde la pagina no necesita recargarse para obtener informacion del servidor.
+
 
 _(Cada integrante agrega acá un apartado con las decisiones de su módulo.)_
