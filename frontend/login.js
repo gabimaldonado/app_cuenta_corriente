@@ -17,6 +17,7 @@ document.querySelector("#formLogin").addEventListener("submit", async function (
 
   const mensaje = document.querySelector("#mensaje");
   mensaje.textContent = "Ingresando…";
+  mensaje.classList.remove("error");
 
   const datos = {
     email:    document.querySelector("#campoEmail").value,
@@ -35,6 +36,7 @@ document.querySelector("#formLogin").addEventListener("submit", async function (
     // Si la API respondió con error (400 o 401), lo mostramos y cortamos
     if (!respuesta.ok) {
       mensaje.textContent = resultado.error;
+	  mensaje.classList.add("error");
       return;
     }
 
@@ -48,5 +50,6 @@ document.querySelector("#formLogin").addEventListener("submit", async function (
   } catch (error) {
     // No hubo respuesta (Apache apagado, sin red...)
     mensaje.textContent = "No se pudo conectar con el servidor";
+	mensaje.classList.add("error");
   }
 });

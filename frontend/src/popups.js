@@ -188,6 +188,10 @@ const popupNuevaEntrega = (()=>{
 		opcionesPrendas = {};
 		datalistPrendas.innerHTML = "";
 		prendas.forEach((prenda)=>{
+			if (!prenda.activo) {
+				return;
+			}
+
 			if (prenda.stock <= 0) {
 				return;
 			}
@@ -431,6 +435,51 @@ const popupNuevaPrenda = (()=>{
 	return self;
 })();
 
+const actualizarDatosCliente = (()=>{
+	let self = {
+		popup:document.getElementById("popupEditarDatosCliente"),
+		formulario:document.getElementById("EDC-formulario"),
+		submitted:false,
+		abrir:undefined,
+		resultado:undefined
+	};
+
+	let id_clienteActual = undefined;
+	const titulo = document.getElementById("EDC-nombre")
+	const inputTelefono = document.getElementById("EDC-telefono");
+	const inputDNI = document.getElementById("EDC-dni");
+	const inputDireccion = document.getElementById("EDC-direccion");
+	const inputCiudad = document.getElementById("EDC-ciudad");
+	const inputNotas = document.getElementById("EDC-notas");
+	const inputActivo = document.getElementById("EDC-activo")
+	self.abrir = (infoCliente)=>{
+		titulo.innerText = "Editando: "+infoCliente.nombre;
+		inputTelefono.value = infoCliente.telefono;
+		inputDNI.value = infoCliente.dni ?? "";
+		inputDireccion.value = infoCliente.direccion ?? "";
+		inputCiudad.value = infoCliente.ciudad ?? "";
+		inputNotas.value = infoCliente.notas ?? "";
+		inputActivo.checked = infoCliente.activo ?? false;
+		id_clienteActual = infoCliente.id;
+		self.submitted = false;
+		self.resultado = undefined;
+		self.popup.showModal();
+	};
+	self.popup.addEventListener("close",()=>{
+		id_clienteActual = undefined;
+	});
+
+	self.formulario.addEventListener("submit",(event)=>{
+		event.preventDefault();
+		let infoForm = new FormData(self.formulario);
+		self.resultado = updateCliente(id_clienteActual,infoForm);
+		self.submitted = true;
+		self.popup.close();
+	});
+
+	return self;
+})();
+
 const popupDatosCliente = (()=>{
 	let self = {
 		popup:document.getElementById("popupDatosCliente"),
@@ -441,12 +490,10 @@ const popupDatosCliente = (()=>{
 
 	const tituloPopup = document.getElementById("DC-nombre");
 	const visualizacionTelefonoDni = document.getElementById("DC-numYDni");
+	const visualizacionNota = document.getElementById("DC-notas")
 	self.abrir = (infoCliente)=>{
 		self.submitted = false;
-		self.clienteActual = infoCliente;
-		tituloPopup.innerText = infoCliente.nombre;
-		visualizacionTelefonoDni.innerText = "+"+infoCliente.telefono+" - "+(infoCliente.dni != undefined ? "DNI "+infoCliente.dni : "Sin DNI registrado");
-
+		refrescarCliente(infoCliente)
 		self.popup.showModal();
 
 		refrescarSaldo();
@@ -457,6 +504,20 @@ const popupDatosCliente = (()=>{
 	self.popup.addEventListener("close",(event)=>{
 		self.clienteActual = undefined;
 	});
+
+	function refrescarCliente(nuevaInfo) {
+		self.clienteActual = nuevaInfo;
+		tituloPopup.innerHTML = "";
+		tituloPopup.innerText = nuevaInfo.nombre+" ";
+		if (!nuevaInfo.activo) {
+			let visInactivo = document.createElement("span");
+			visInactivo.style.color = "red";
+			visInactivo.innerText = "(Inactivo)";
+			tituloPopup.appendChild(visInactivo);
+		}
+		visualizacionTelefonoDni.innerText = "+"+nuevaInfo.telefono+" - "+(nuevaInfo.dni != undefined ? "DNI "+nuevaInfo.dni : "Sin DNI registrado");
+		visualizacionNota.innerText = nuevaInfo.notas ?? "Sin nota";
+	}
 
 	const saldoCliente = document.getElementById("DC-saldo");
 	const descripcionSaldo = document.getElementById("DC-comprasPagos")
@@ -639,7 +700,7 @@ const popupDatosCliente = (()=>{
 		desc.innerText = 
 			formateadorFecha.format(infoPago.fecha)
 			+" - "
-			+(infoPago.observacion != undefined ? infoPago.observacion : "Sin observacion");
+			+(infoPago.observacion ?? "Sin observacion");
 		divLeft.appendChild(desc);
 
 		const monto = document.createElement("p");
@@ -650,6 +711,9 @@ const popupDatosCliente = (()=>{
 	}
 
 	document.getElementById("DC-nuevaEntrega").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		popupNuevaEntrega.abrir(hashCliente(self.clienteActual));
 		popupNuevaEntrega.popup.addEventListener("close",(event)=>{
 			if (!popupNuevaEntrega.submitted) {
@@ -660,6 +724,9 @@ const popupDatosCliente = (()=>{
 		},{once:true});
 	});
 	document.getElementById("DC-nuevoPago").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		popupRegistrarPago.abrir(hashCliente(self.clienteActual));
 		popupRegistrarPago.popup.addEventListener("close",(event)=>{
 			if (!popupRegistrarPago.submitted) {
@@ -671,8 +738,21 @@ const popupDatosCliente = (()=>{
 		},{once:true});
 	});
 	document.getElementById("DC-whatsapp").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		//qwq
 	});
+	document.getElementById("DC-editar").addEventListener("click",(event)=>{
+		actualizarDatosCliente.abrir(self.clienteActual);
+		actualizarDatosCliente.popup.addEventListener("close",(event)=>{
+			if (!actualizarDatosCliente.submitted) {
+				return;
+			}
+			actualizarDatosCliente.resultado.then(refrescarCliente);
+			self.submitted = true;
+		})
+	})
 
 	return self;
 })();
@@ -691,12 +771,14 @@ const popupDatosPrenda = (()=>{
 	const inputColor = document.getElementById("DP-color");
 	const inputPrecio = document.getElementById("DP-precio");
 	const inputStock = document.getElementById("DP-stock");
+	const inputActivo = document.getElementById("DP-activo")
 	self.abrir = (infoPrenda)=>{
 		titulo.innerText = infoPrenda.descripcion;
-		inputTalle.value = infoPrenda.talle;
-		inputColor.value = infoPrenda.color;
-		inputPrecio.value = infoPrenda.precio;
-		inputStock.value = infoPrenda.stock;
+		inputTalle.value = infoPrenda.talle ?? "";
+		inputColor.value = infoPrenda.color ?? "";
+		inputPrecio.value = infoPrenda.precio ?? 0;
+		inputStock.value = infoPrenda.stock ?? 0;
+		inputActivo.checked = infoPrenda.activo ?? false;
 		id_prendaActual = infoPrenda.id;
 		self.submitted = false;
 		self.popup.showModal();
@@ -712,6 +794,65 @@ const popupDatosPrenda = (()=>{
 		self.submitted = true;
 		self.popup.close();
 	});
+
+	return self;
+})();
+
+const popupMapaClientes = (()=>{
+	let self = {
+		popup:document.getElementById("popupMapaClientes"),
+		elementoMapa:document.getElementById("MC-mapaLeaflet"),
+		abrir:undefined,
+		mapa:undefined
+	};
+	self.mapa = new L.LeafletMap(self.elementoMapa).setView([51.505, -0.09], 13);
+	new L.TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		maxZoom: 19,
+		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+	}).addTo(self.mapa);
+
+	self.abrir = () => {
+		self.popup.showModal();
+		cargarClientes();
+	};
+
+	self.marcadoresActuales = [];
+	const divErr = document.getElementById("MC-err");
+	async function cargarClientes() {
+		self.marcadoresActuales.forEach((marcador)=>{
+			marcador.remove();
+		});
+		self.marcadoresActuales = [];
+		divErr.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		divErr.appendChild(elementoCarga);
+		let clientes = undefined;
+		try {
+			clientes = await getClientes();
+		} catch (err) {
+			divErr.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			return;
+		} finally {
+			elementoCarga.remove();
+		}
+
+		clientes.forEach((cliente)=>{
+			if (cliente.longitud == undefined || cliente.latitud == undefined) {
+				return;
+			}
+			let coordenadas = [cliente.latitud,cliente.longitud];
+			let marcador = new L.Marker(coordenadas);
+			marcador.addTo(self.mapa)
+			marcador.bindPopup(cliente.nombre+", "+cliente.direccion)
+			self.marcadoresActuales.push(marcador);
+		});
+		if (self.marcadoresActuales.length <= 0) {
+			divErr.appendChild(crearElementoErr("No hay clientes con ubicacion para mostrar"));
+		} else {
+			self.mapa.setView(self.marcadoresActuales[0].getLatLng(),10)
+			self.marcadoresActuales[0].openPopup();
+		}
+	}
 
 	return self;
 })();

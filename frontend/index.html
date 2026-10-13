@@ -4,8 +4,12 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Dashboard App cuenta corriente</title>
-	<link rel="stylesheet" href="assets/estilos.css">
-	<script src="sesion.js"></script>
+	<link rel="stylesheet" href="assets/estilosCompartidos.css">
+	<link rel="stylesheet" href="assets/estilosIndex.css">
+
+	<!--LEAFLET-->
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@2.0.0-alpha.1/dist/leaflet.css" integrity="sha256-P+hWJNlpL+GBSRYC7cdsDbQH91URmpDeOzLp7DbFRtE=" crossorigin="anonymous" />
+	<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js" integrity="sha256-lJUxSvvKo54k90cTx9u9DCAP1MtAEqnLmx6Sx3no03c=" crossorigin=""></script>
 </head>
 <body>
 	
@@ -50,7 +54,10 @@
 				<a id="PC-nuevoCliente">+</a>
 			</header>
 			<section>
-				<input id="PC-busquedaClientes" type="text" placeholder="Busqueda por nombre o DNI">
+				<div class="leftRightFlex">
+					<input id="PC-busquedaClientes" type="text" placeholder="Busqueda por nombre o DNI">
+					<button id="PC-botonMapas" class="botonConfirmatorio">Mapa de clientes</button>
+				</div>
 				<div id="PC-filtrosClientes" class="botonesOpcionMultiple">
 					<input type="radio" name="filtroCliente" value="1" id="PC-FC-todas" checked>
 					<label for="PC-FC-todas">Todas</label>
@@ -203,6 +210,8 @@
 				<input id="NC-dni" name="dni" type="number" minlength="8" maxlength="8" placeholder="DNI">
 				<label for="NC-direccion">Direccion</label>
 				<input id="NC-direccion" name="direccion" type="text" maxlength="150" placeholder="Direccion">
+				<label for="NC-ciudad">Ciudad</label>
+				<input id="NC-ciudad" name="ciudad" type="text" maxlength="100" placeholder="Ciudad">
 				<label for="NC-notas">Notas</label>
 				<textarea id="NC-notas" name="notas" type="text" maxlength="255" placeholder="Notas"></textarea>
 			</form>
@@ -241,6 +250,7 @@
 			<header>
 				<a class="popupBack">&lt;</a>
 				<h2 id="DC-nombre">Nombre y Apellido</h2>
+				<a id="DC-editar" href="#">Editar</a>
 			</header>
 			<p id="DC-numYDni">+54 9 11 0000-0000 - DNI 00.000.000</p>
 			<section class="statusHeader">
@@ -248,6 +258,7 @@
 				<p id="DC-saldo" class="precioDeuda">00.000</p>
 				<p id="DC-comprasPagos">Compras $ 00.000 - Pagos $ 00.000</p>
 			</section>
+			<p id="DC-notas"></p>
 			<section class="botonesCliente">
 				<button id="DC-nuevaEntrega">Entrega</button>
 				<button id="DC-nuevoPago">Pago</button>
@@ -273,6 +284,35 @@
 		</div>
 	</dialog>
 
+	<dialog id="popupEditarDatosCliente" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2 id="EDC-nombre">Editando Nombre y Apellido</h2>
+			</header>
+			<form id="EDC-formulario">
+				<label for="EDC-telefono">Telefono*</label>
+				<input id="EDC-telefono" name="telefono" type="tel", placeholder="Telefono" required>
+				<label for="EDC-dni">DNI</label>
+				<input id="EDC-dni" name="dni" type="number" minlength="8" maxlength="8" placeholder="DNI">
+				<label for="EDC-direccion">Direccion</label>
+				<input id="EDC-direccion" name="direccion" type="text" maxlength="150" placeholder="Direccion">
+				<label for="EDC-ciudad">Ciudad</label>
+				<input id="EDC-ciudad" name="ciudad" type="text" maxlength="100" placeholder="Ciudad">
+				<label for="EDC-notas">Notas</label>
+				<textarea id="EDC-notas" name="notas" type="text" maxlength="255" placeholder="Notas"></textarea>
+				<label for="EDC-activo">Activo*</label>
+				<div class="slider">
+					<input id="EDC-activo" name="activo" type="checkbox">
+					<label for="EDC-activo"></label>
+				</div>
+			</form>
+			<footer>
+				<button class="botonConfirmatorio" type="submit" form="EDC-formulario">Actualizar Cliente</button>
+			</footer>
+		</div>
+	</dialog>
+
 	<dialog id="popupDatosPrenda" class="popup">
 		<div class="popupContent">
 			<header>
@@ -288,6 +328,11 @@
 				<input id="DP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
 				<label for="DP-stock">Stock*</label>
 				<input id="DP-stock" name="stock" type="number" min="0" placeholder="Stock" required>
+				<label for="DP-activo">Activo*</label>
+				<div class="slider">
+					<input id="DP-activo" name="activo" type="checkbox">
+					<label for="DP-activo"></label>
+				</div>
 			</form>
 			<footer>
 				<button class="botonConfirmatorio" type="submit" form="DP-formulario">Actualizar Prenda</button>
@@ -295,6 +340,16 @@
 		</div>
 	</dialog>
 
+	<dialog id="popupMapaClientes" class="popup">
+		<div class="popupContent">
+			<header>
+				<a class="popupBack">&lt;</a>
+				<h2>Mapa de clientes</h2>
+			</header>
+			<div id="MC-err"></div>
+			<div id="MC-mapaLeaflet"></div>
+		</div>
+	</dialog>
 
 	<footer>
 		<nav>
@@ -304,6 +359,7 @@
 		</nav>
 	</footer>
 
+	<script src="sesion.js"></script>
 	<script src="src/utils.js"></script>
 	<script src="src/api.js"></script>
 	<script src="src/popups.js"></script>

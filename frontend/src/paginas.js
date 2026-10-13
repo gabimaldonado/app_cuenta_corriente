@@ -123,6 +123,9 @@ const paginaInicio = (()=>{
 				cantDeudores++;
 				deudaTotal += info.deuda;
 				let infoCliente = await getClienteId(info.cliente_id);
+				if (!infoCliente.activo) {
+					return;
+				}
 
 				listaDeudas.appendChild(crearElementoDeudor(info,infoCliente));
 			}));
@@ -153,8 +156,7 @@ const paginaInicio = (()=>{
 		const divisorInfoCliente = document.createElement("div");
 		elementoLista.appendChild(divisorInfoCliente);
 
-		const imgIcon = document.createElement("img");
-		imgIcon.src = "#";
+		const imgIcon = crearIconoCliente(infoCliente);
 		divisorInfoCliente.appendChild(imgIcon);
 
 		const visNombreCliente = document.createElement("h3");
@@ -282,12 +284,15 @@ const paginaClientes = (()=>{
 		const divisorInfoCliente = document.createElement("div");
 		elementoLista.appendChild(divisorInfoCliente);
 
-		const imgIcon = document.createElement("img");
-		imgIcon.src = "#";
+		const imgIcon = crearIconoCliente(infoCliente);
 		divisorInfoCliente.appendChild(imgIcon);
 
 		const visNombreCliente = document.createElement("h3");
 		visNombreCliente.innerText = infoCliente.nombre;
+		if (!infoCliente.activo) {
+			visNombreCliente.innerText += " (inactivo)";
+			visNombreCliente.style.color = "red";
+		}
 		divisorInfoCliente.appendChild(visNombreCliente);
 
 		const visTelefono = document.createElement("p");
@@ -330,6 +335,10 @@ const paginaClientes = (()=>{
 			}
 			cargarClientes();
 		},{once:true});
+	});
+
+	document.getElementById("PC-botonMapas").addEventListener("click",(event)=>{
+		popupMapaClientes.abrir();
 	});
 
 	return self;
@@ -413,7 +422,7 @@ const paginaPrendas = (()=>{
 		elementoLista.classList.add("prenda");
 
 		const imgPrincipal = document.createElement("img");
-		imgPrincipal.src = "#";
+		imgPrincipal.src = infoPrenda.foto != undefined ? infoPrenda.foto : "#";
 		elementoLista.appendChild(imgPrincipal);
 
 		const divPrenda = crearDivInfoPrenda(infoPrenda);

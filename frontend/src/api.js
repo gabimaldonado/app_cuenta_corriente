@@ -128,6 +128,8 @@ let testClientes = [
 		direccion:'Belgrano 123', 
 		notas:'Prefiere talle M',
 		activo:true,
+		latitud:0,
+		longitud:10
 	},
 	{
 		id:2,
@@ -183,6 +185,20 @@ async function crearCliente(infoForm) {
 	}
 	idClienteDisponible++;
 	testClientes.push(cliente);
+}
+
+async function updateCliente(id_cliente,infoForm) {
+	let cliente = testClientes.find((v)=>{
+		return v.id == id_cliente;
+	});
+	cliente.telefono = infoForm.get("telefono");
+	cliente.dni = infoForm.get("dni");
+	cliente.direccion = infoForm.get("direccion");
+	cliente.ciudad = infoForm.get("ciudad");
+	cliente.notas = infoForm.get("notas");
+	cliente.activo = infoForm.get("activo");
+	console.log(testClientes)
+	return cliente;
 }
 
 let idPagoDisponible = 4;
@@ -294,7 +310,8 @@ let testPrendas = [
 		talle:'38',
 		color:'Azul',
 		precio:45000.00,
-		stock:5
+		stock:5,
+		activo:true
 	},
 	{
 		id:2,
@@ -302,7 +319,8 @@ let testPrendas = [
 		talle:'M',
 		color:'Blanca',
 		precio:15000.00,
-		stock:8
+		stock:8,
+		activo:true
 	},
 	{
 		id:3,
@@ -310,7 +328,8 @@ let testPrendas = [
 		talle:'S',
 		color:'Negra',
 		precio:18000.00,
-		stock:5
+		stock:5,
+		activo:true
 	},
 	{
 		id:4,
@@ -318,7 +337,8 @@ let testPrendas = [
 		talle:'M',
 		color:'Celeste',
 		precio:65000.00,
-		stock:2
+		stock:2,
+		activo:true
 	},
 	{
 		id:5,
@@ -326,7 +346,8 @@ let testPrendas = [
 		talle:'L',
 		color:'Negra',
 		precio:80000.00,
-		stock:2
+		stock:2,
+		activo:true
 	},
 	{
 		id:6,
@@ -334,7 +355,8 @@ let testPrendas = [
 		talle:'M',
 		color:'Gris',
 		precio:35000.00,
-		stock:4
+		stock:4,
+		activo:true
 	},
 	{
 		id:7,
@@ -342,7 +364,8 @@ let testPrendas = [
 		talle:'S',
 		color:'Beige',
 		precio:30000.00,
-		stock:3
+		stock:3,
+		activo:true
 	},
 	{
 		id:8,
@@ -350,7 +373,8 @@ let testPrendas = [
 		talle:'M',
 		color:'Verde',
 		precio:55000.00,
-		stock:2
+		stock:2,
+		activo:true
 	}
 ];
 async function getPrendas() {
@@ -382,7 +406,8 @@ async function postPrenda(infoForm) {
 		talle:infoForm.get("talle"),
 		color:infoForm.get("color"),
 		precio: new Number(infoForm.get("precio")),
-		stock: new Number(infoForm.get("stock"))
+		stock: new Number(infoForm.get("stock")),
+		activo: true
 	}
 	idPrendaDisponible++;
 	testPrendas.push(prenda);
@@ -390,12 +415,13 @@ async function postPrenda(infoForm) {
 
 async function updatePrenda(id_prenda,infoForm) {
 	let prenda = testPrendas.find((v)=>{
-		return v.id = id_prenda;
+		return v.id == id_prenda;
 	});
 	prenda.talle = infoForm.get("talle");
 	prenda.color = infoForm.get("color");
 	prenda.precio = new Number(infoForm.get("precio"));
 	prenda.stock = new Number(infoForm.get("stock"));
+	prenda.activo = infoForm.get("activo");
 }
 
 let apiURL = "localhost/alumnos.php";
