@@ -1,16 +1,26 @@
-## Módulo: Pagos y Cuenta Corriente 
+# Módulo: Pagos y Cuenta Corriente 
 
-### 1. `api/pagos.php`
+## `api/pagos.php`
 
-#### GET `api/pagos.php?cliente_id={id}`
+### GET - listar pagos de una clienta
 
-Lista todos los pagos registrados para una clienta, ordenados por fecha descendente.
+`GET api/pagos.php?cliente_id={id}`
 
-* **Headers**: `Authorization: Bearer <token>`
-* **Respuesta exitosa (200 OK)**:
+Devuelve todos los pagos registrados para la clienta indicada, ordenados por fecha descendente (del más reciente al más antiguo).
+
+**200**:
 ```json
 [
   {
+    "id": 2,
+    "cliente_id": 1,
+    "fecha": "2026-10-01 18:00:00",
+    "monto": 30000.00,
+    "medio": "transferencia",
+    "observacion": null
+  },
+  {
+    
     "id": 1,
     "cliente_id": 1,
     "fecha": "2026-10-10 14:30:00",
@@ -20,18 +30,15 @@ Lista todos los pagos registrados para una clienta, ordenados por fecha descende
   }
 ] 
 ```
+Si la clienta no tiene pagos registrados devuelve [] (con 200).
 
-* **Errores**:
-  * `400 Bad Request`: `{"error": "El parametro cliente_id es obligatorio."}`
-  * `401 Unauthorized`: Token no válido o ausente.
+### POST - Registrar un nuevo pago
 
-
-#### POST `api/pagos.php`
+`POST api/pagos.php`
 
 Registra un nuevo pago en el sistema.
 
-* **Headers**: `Authorization: Bearer <token>`, `Content-Type: application/json`
-* **Cuerpo recibido (Body)**:
+
 ```json
 {
   "cliente_id": 1,
@@ -40,8 +47,11 @@ Registra un nuevo pago en el sistema.
   "observacion": "Pago cuota 1"
 }
 ```
+cliente_id y monto son obligatorios. medio es opcional (por defecto efectivo). observacion es opcional.
 
-* **Respuesta exitosa (201 Created)**:
+
+**201: el pago registrado, con su id asignado.**
+
 ```json
 {
   "mensaje": "Pago registrado correctamente",
@@ -54,22 +64,28 @@ Registra un nuevo pago en el sistema.
   }
 }
 ```
+### Errores de pagos
 
-* **Errores**:
-  * `400 Bad Request`: `{"error": "El ID de clinte es obligatorio."}`
-  * `401 Unauthorized`: Token no válido o ausente.
-  * `404 Not Found`: `{"error": "La clienta no existe o se encuentra inactiva."}`
-  * `422 Unprocessable Entity`: `{"error": "El monto del pago debe ser mayor a 0."}`
+| Caso | Código | Mensaje |
+| --- | --- | --- |
+| Falta el nombre `cliente_id` en GET | 400 | `El parametro cliente_id es obligatorio.` |
+| Falta `cliente_id` en el cuerpo del POST | 400 | `El ID de cliente es obligatorio.` |
+| Monto menor o igual a 0 | 422 | `El monto del pago debe ser mayor a 0.` |
+| Clienta inexistente o dada de baja | 404 | `La clienta no existe o se encuentra inactiva.` |
+| Falta o es inválido el token | 401 | `No autorizado` |
+| Método no permitido | 405 | `Método no permitido` |
 
+---
 
-### 2. `api/resumen.php`
+## `api/resumen.php`
 
-#### GET `api/resumen.php?cliente_id={id}`
+### GET - Ficha financiera de una clienta
 
-Devuelve la ficha financiera consolidada de la clienta
+`GET api/resumen.php?cliente_id=1`
 
-* **Headers**: `Authorization: Bearer <token>`
-* **Respuesta exitosa (200 OK)**:
+Devuelve totales acumulados, saldo actual, prendas que mantiene a prueba y el historial de pagos.
+
+**200**:
 
 ```json
 {
@@ -100,18 +116,14 @@ Devuelve la ficha financiera consolidada de la clienta
 }
 ```
 
-* **Errores**:
-  * `400 Bad Request`: `{"error": "El parametro cliente_id es obligatorio."}`
-  * `401 Unauthorized`: Token no válido o ausente.
-  * `404 Not Found`: `{"error": "Cliente no encontrado."}`
+### GET - Panel de clientes deudoras 
 
-
-#### GET `api/resumen.php?deudores=1`
+`GET api/resumen.php?deudores=1`
 
 Lista todas las clientas con saldo deudor (saldo > 0), ordenadas de mayor a menor deuda.
 
-* **Headers**: `Authorization: Bearer <token>`
-* **Respuesta exitosa (200 OK)**:
+
+**200**:
 
 ```json
 {
@@ -127,8 +139,16 @@ Lista todas las clientas con saldo deudor (saldo > 0), ordenadas de mayor a meno
 }
 ```
 
-* **Errores**:
-  * `401 Unauthorized`: Token no válido o ausente.
+### Errores de resumen
+
+| Caso | Código | Mensaje |
+| --- | --- | --- |
+| Falta de parametro `cliente_id` | 400 | `El parametro cliente_id es obligatorio.` |
+| Clienta no encontrada o inactiva | 404 | `Clienta no encontrada` |
+| Falta o es inválido el token | 401 | `No autorizado` |
+| Método no permitido | 405 | `Método no permitido` |
+
+---
 
 
 
