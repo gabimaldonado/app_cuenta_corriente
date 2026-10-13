@@ -12,14 +12,6 @@ Devuelve todos los pagos registrados para la clienta indicada, ordenados por fec
 ```json
 [
   {
-    "id": 2,
-    "cliente_id": 1,
-    "fecha": "2026-10-01 18:00:00",
-    "monto": 30000.00,
-    "medio": "transferencia",
-    "observacion": null
-  },
-  {
     
     "id": 1,
     "cliente_id": 1,
@@ -27,6 +19,14 @@ Devuelve todos los pagos registrados para la clienta indicada, ordenados por fec
     "monto": 20000.00,
     "medio": "efectivo",
     "observacion": "Seña inicial"
+  },
+  {
+    "id": 2,
+    "cliente_id": 1,
+    "fecha": "2026-10-01 18:00:00",
+    "monto": 30000.00,
+    "medio": "transferencia",
+    "observacion": null
   }
 ] 
 ```
@@ -68,7 +68,7 @@ cliente_id y monto son obligatorios. medio es opcional (por defecto efectivo). o
 
 | Caso | Código | Mensaje |
 | --- | --- | --- |
-| Falta el nombre `cliente_id` en GET | 400 | `El parametro cliente_id es obligatorio.` |
+| Falta el parametro `cliente_id` en GET | 400 | `El parametro cliente_id es obligatorio.` |
 | Falta `cliente_id` en el cuerpo del POST | 400 | `El ID de cliente es obligatorio.` |
 | Monto menor o igual a 0 | 422 | `El monto del pago debe ser mayor a 0.` |
 | Clienta inexistente o dada de baja | 404 | `La clienta no existe o se encuentra inactiva.` |
