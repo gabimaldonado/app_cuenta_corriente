@@ -6,8 +6,8 @@ function hashCliente(cliente) {
 	return cliente.nombre+" ("+cliente.id+")";
 }
 
-async function generarListaOpcionesClientes(elementoDatalist) {
-	const clientes = await getClientes();
+async function generarListaOpcionesClientes(elementoDatalist,abortSignal) {
+	const clientes = await getClientes(abortSignal);
 	const lookupClientes = {};
 	elementoDatalist.innerHTML = "";
 	clientes.forEach((cliente)=>{
@@ -83,4 +83,11 @@ function abrirPagina(id) {
 		const elemento = document.getElementById(pag);
 		elemento.hidden = id != pag;
 	});
+}
+
+function manejarAbort(controller) {
+	if (controller) {
+		controller.abort("Cancelado");
+	}
+	return new AbortController();
 }

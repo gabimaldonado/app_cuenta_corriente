@@ -19,7 +19,10 @@ const popupConfirmarEntrega = (()=>{
 		cargarPrendas();
 	};
 	
+	let abortCargaPrendas = undefined;
 	async function cargarPrendas() {
+		abortCargaPrendas = manejarAbort(abortCargaPrendas);
+
 		self.formulario.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		self.formulario.appendChild(elementoCarga);
@@ -28,12 +31,14 @@ const popupConfirmarEntrega = (()=>{
 
 		let prendasEntrega = [];
 		try {
-			prendasEntrega = await getPrendasInEntrega(self.entregaActual.id);
+			prendasEntrega = await getPrendasInEntrega(self.entregaActual.id,abortCargaPrendas.signal);
 		} catch (err) {
-			self.formulario.appendChild(crearElementoErr("No se han podido cargar los prendas asociadas a esta entrega: "+err));
-			descFooter.innerText = "Error de carga";
-			deudaFooter.innerText = "Error de carga";
-			throw err;
+			if (err.name != "AbortError") {
+				self.formulario.appendChild(crearElementoErr("No se han podido cargar las prendas asociadas a esta entrega: "+err));
+				descFooter.innerText = "Error de carga";
+				deudaFooter.innerText = "Error de carga";
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -182,18 +187,23 @@ const popupNuevaEntrega = (()=>{
 	});
 
 	const contenedorError = document.getElementById("NE-err")
+	let abortCargaOpciones = undefined;
 	async function generarOpciones() {
+		abortCargaOpciones = manejarAbort(abortCargaOpciones);
+
 		contenedorError.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		contenedorError.appendChild(elementoCarga);
 
 		let prendas = undefined;
 		try {
-			prendas = await getPrendas();
-			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+			prendas = await getPrendas(abortCargaOpciones.signal);
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes,abortCargaOpciones.signal);
 		} catch (err) {
-			contenedorError.appendChild(crearElementoErr("No se han podido cargar las opciones de prendas/clientes seleccionables: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				contenedorError.appendChild(crearElementoErr("No se han podido cargar las opciones de prendas/clientes seleccionables: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -335,15 +345,20 @@ const popupRegistrarPago = (()=>{
 	});
 	
 	const contenedorErrorOpciones = document.getElementById("RP-errOpciones")
+	let abortCargaOpciones = undefined;
 	async function cargarOpciones() {
+		abortCargaOpciones = manejarAbort(abortCargaOpciones);
+
 		contenedorErrorOpciones.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		contenedorErrorOpciones.appendChild(elementoCarga);
 		try {
-			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes,abortCargaOpciones.signal);
 		} catch (err) {
-			contenedorErrorOpciones.appendChild(crearElementoErr("No se han podido cargar los clientes seleccionables: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				contenedorErrorOpciones.appendChild(crearElementoErr("No se han podido cargar los clientes seleccionables: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -351,10 +366,11 @@ const popupRegistrarPago = (()=>{
 
 	const visSaldo = document.getElementById("RP-saldoCliente");
 	const saldoRestante = document.getElementById("RP-saldoRestante")
+	let abortCargaSaldo = undefined;
 	async function actualizarSaldoVisible() {
+		abortCargaSaldo = manejarAbort(abortCargaSaldo);
+
 		const clienta = opcionesClientes[busquedaClienta.value];
-		let clientaValida = true;
-		
 		let saldo = undefined;
 
 		if (!clienta) {
@@ -366,15 +382,17 @@ const popupRegistrarPago = (()=>{
 		busquedaClienta.setCustomValidity("Clienta cargandose...");
 		visSaldo.innerText = "Cargando...";
 		try {
-			[saldo] = await getDeudaCliente(clienta.id);
+			[saldo] = await getDeudaCliente(clienta.id,abortCargaSaldo.signal);
 			busquedaClienta.setCustomValidity("");
 			visSaldo.innerText = "$ "+formatearMonto(saldo,3,2);
 			saldoClienta = saldo;
 		} catch (err) {
-			busquedaClienta.setCustomValidity("Error de carga, intente nuevamente.");
-			visSaldo.innerText = "Error de carga";
+			if (err.name != "AbortError") {
+				busquedaClienta.setCustomValidity("Error de carga, intente nuevamente.");
+				visSaldo.innerText = "Error de carga";
+			}
 			saldoClienta = 0;
-			throw err;
+			return;
 		} finally {
 			verificarMontoIngresado();
 		}
@@ -541,34 +559,44 @@ const popupDatosCliente = (()=>{
 
 	const saldoCliente = document.getElementById("DC-saldo");
 	const descripcionSaldo = document.getElementById("DC-comprasPagos")
+	let abortCargaSaldo = undefined;
 	async function refrescarSaldo() {
+		abortCargaSaldo = manejarAbort(abortCargaSaldo);
+
 		saldoCliente.innerText = "Cargando...";
 		descripcionSaldo.innerText = "Cargando...";
 		try {
-			const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id);
+			const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id,abortCargaSaldo.signal);
 			saldoCliente.innerText = "$ "+formatearMonto(saldo,3,2);
 			descripcionSaldo.innerText = "Compras $ "+formatearMonto(compras,3,2)+" - Pagos $ "+formatearMonto(pagos,3,2);
 		} catch (err) {
-			saldoCliente.innerText = "Error de carga";
-			descripcionSaldo.innerText = "Error de carga";
-			throw err;
+			if (err.name != "AbortError") {
+				saldoCliente.innerText = "Error de carga";
+				descripcionSaldo.innerText = "Error de carga";
+			}
+			return;
 		} finally {
 			//uuu
 		}
 	}
 
 	const listaEntregas = document.getElementById("DC-listaEntregas");
+	let abortCargaEntregas = undefined;
 	async function cargarEntregas() {
+		abortCargaEntregas = manejarAbort(abortCargaEntregas);
+
 		listaEntregas.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaEntregas.append(elementoCarga);
 
 		let entregas = undefined;
 		try {
-			entregas = await getEntregasCliente(self.clienteActual.id);
+			entregas = await getEntregasCliente(self.clienteActual.id,abortCargaEntregas.signal);
 		} catch (err) {
-			listaEntregas.appendChild(crearElementoErr("No se han podido cargar las entregas: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				listaEntregas.appendChild(crearElementoErr("No se han podido cargar las entregas: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -621,7 +649,10 @@ const popupDatosCliente = (()=>{
 	}
 
 	const listaMovimientos = document.getElementById("DC-listaMovimientos");
+	let abortCargaMovimientos = undefined;
 	async function cargarMovimientos() {
+		abortCargaMovimientos = manejarAbort(abortCargaMovimientos);
+
 		listaMovimientos.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaMovimientos.appendChild(elementoCarga);
@@ -629,8 +660,8 @@ const popupDatosCliente = (()=>{
 		let pagos,entregas = undefined;
 		let movimientosCargados = [];
 		try {
-			pagos = await getPagosCliente(self.clienteActual.id);
-			entregas = await getEntregasCliente(self.clienteActual.id);
+			pagos = await getPagosCliente(self.clienteActual.id,abortCargaMovimientos.signal);
+			entregas = await getEntregasCliente(self.clienteActual.id,abortCargaMovimientos.signal);
 			pagos.forEach((pago) => {
 				movimientosCargados.push({
 					elemento:crearElementoMovimientoPago(pago),
@@ -641,15 +672,17 @@ const popupDatosCliente = (()=>{
 				if (entrega.estado == "abierta") {
 					return;
 				}
-				const prendasEntrega = await getPrendasInEntrega(entrega.id)
+				const prendasEntrega = await getPrendasInEntrega(entrega.id,abortCargaMovimientos.signal)
 				movimientosCargados.push({
 					elemento:crearElementoMovimientoCompra(entrega,prendasEntrega),
 					fecha:entrega.fecha
 				});
 			}));
 		} catch (err) {
-			listaEntregas.appendChild(crearElementoErr("No se han podido cargar los movimientos: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				listaEntregas.appendChild(crearElementoErr("No se han podido cargar los movimientos: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -825,7 +858,7 @@ const popupMapaClientes = (()=>{
 		abrir:undefined,
 		mapa:undefined
 	};
-	self.mapa = new L.LeafletMap(self.elementoMapa).setView([51.505, -0.09], 13);
+	self.mapa = new L.LeafletMap(self.elementoMapa).setView([-34.6037, -58.3816], 13);
 	new L.TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 		maxZoom: 19,
 		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -838,7 +871,10 @@ const popupMapaClientes = (()=>{
 
 	self.marcadoresActuales = [];
 	const divErr = document.getElementById("MC-err");
+	let abortCargaClientes = undefined;
 	async function cargarClientes() {
+		abortCargaClientes = manejarAbort(abortCargaClientes);
+
 		self.marcadoresActuales.forEach((marcador)=>{
 			marcador.remove();
 		});
@@ -848,9 +884,11 @@ const popupMapaClientes = (()=>{
 		divErr.appendChild(elementoCarga);
 		let clientes = undefined;
 		try {
-			clientes = await getClientes();
+			clientes = await getClientes(abortCargaClientes.signal);
 		} catch (err) {
-			divErr.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			if (err.name != "AbortError") {
+				divErr.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			}
 			return;
 		} finally {
 			elementoCarga.remove();

@@ -11,7 +11,10 @@ const paginaInicio = (()=>{
 
 	const listaEntregas = document.getElementById("PI-listaEntregas");
 	const cantEntregas = document.getElementById("PI-cantEntregas");
+	let abortCargaEntregas = undefined;
 	async function cargarEntregas() {
+		abortCargaEntregas = manejarAbort(abortCargaEntregas);
+
 		listaEntregas.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaEntregas.appendChild(elementoCarga);
@@ -20,20 +23,22 @@ const paginaInicio = (()=>{
 		let entregas = undefined;
 		let entregasAbiertas = 0;
 		try {
-			entregas = await getEntregas();
+			entregas = await getEntregas(abortCargaEntregas.signal);
 			await Promise.all(entregas.map(async (info)=>{
 				if (info.estado != "abierta") {
 					return;
 				}
 				entregasAbiertas++;
 
-				let cliente = await getClienteId(info.cliente_id);
+				let cliente = await getClienteId(info.cliente_id,abortCargaEntregas.signal);
 				listaEntregas.appendChild(crearElementoEntrega(cliente,info));
 			}));
 		} catch (err) {
-			listaEntregas.appendChild(crearElementoErr("No se han podido cargar todas las entregas: "+err));
-			cantEntregas.innerText = "Error de carga"
-			throw err;
+			if (err.name != "AbortError") {
+				listaEntregas.appendChild(crearElementoErr("No se han podido cargar todas las entregas: "+err));
+				cantEntregas.innerText = "Error de carga"
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -104,7 +109,10 @@ const paginaInicio = (()=>{
 	const listaDeudas = document.getElementById("PI-listaDeudores");
 	const montoTotal = document.getElementById("PI-montoTotal");
 	const cantClientes = document.getElementById("PI-cantClientes");
+	let abortCargaDeudores = undefined;
 	async function cargarDeudores() {
+		abortCargaDeudores = manejarAbort(abortCargaDeudores);
+
 		listaDeudas.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaDeudas.appendChild(elementoCarga);
@@ -115,14 +123,14 @@ const paginaInicio = (()=>{
 		let cantDeudores = 0;
 		let deudaTotal = 0;
 		try {
-			deudas = await getDeudas();
+			deudas = await getDeudas(abortCargaDeudores.signal);
 			await Promise.all(deudas.map(async (info)=>{
 				if (info.deuda <= 0) {
 					return;
 				}
 				cantDeudores++;
 				deudaTotal += info.deuda;
-				let infoCliente = await getClienteId(info.cliente_id);
+				let infoCliente = await getClienteId(info.cliente_id,abortCargaDeudores.signal);
 				if (!infoCliente.activo) {
 					return;
 				}
@@ -130,10 +138,12 @@ const paginaInicio = (()=>{
 				listaDeudas.appendChild(crearElementoDeudor(info,infoCliente));
 			}));
 		} catch (err) {
-			listaDeudas.appendChild(crearElementoErr("No se han podido cargar todos los deudores: "+err));
-			montoTotal.innerText = "Error de carga";
-			cantClientes.innerText = "Error de carga";
-			throw err;
+			if (err.name != "AbortError") {
+				listaDeudas.appendChild(crearElementoErr("No se han podido cargar todos los deudores: "+err));
+				montoTotal.innerText = "Error de carga";
+				cantClientes.innerText = "Error de carga";
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -239,7 +249,10 @@ const paginaClientes = (()=>{
 
 	let busquedaClientes = "";
 	const listaClientes = document.getElementById("PC-listaClientes");
+	let abortCargaClientes = undefined;
 	async function cargarClientes() {
+		abortCargaClientes = manejarAbort(abortCargaClientes);
+
 		listaClientes.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaClientes.appendChild(elementoCarga);
@@ -247,11 +260,13 @@ const paginaClientes = (()=>{
 		const tipoFiltro = getFiltro();
 		let clientes,entregas,deudas = undefined;
 		try {
-			clientes = await getClientes();
-			entregas = await getEntregas(); //necesario para el filtrado
-			deudas = await getDeudas();
+			clientes = await getClientes(abortCargaClientes.signal);
+			entregas = await getEntregas(abortCargaClientes.signal); //necesario para el filtrado
+			deudas = await getDeudas(abortCargaClientes.signal);
 		} catch (err) {
-			listaClientes.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			if (err.name != "AbortError") {
+				listaClientes.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			}
 			throw err;
 		} finally {
 			elementoCarga.remove();
@@ -385,7 +400,10 @@ const paginaPrendas = (()=>{
 
 	let busquedaPrendas = "";
 	const listaPrendas = document.getElementById("PP-listaPrendas");
+	let abortCargaPrendas = undefined;
 	async function cargarPrendas() {
+		abortCargaPrendas = manejarAbort(abortCargaPrendas);
+		
 		listaPrendas.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaPrendas.appendChild(elementoCarga);
@@ -393,10 +411,12 @@ const paginaPrendas = (()=>{
 		const tipoFiltro = getFiltro();
 		let prendas = undefined;
 		try {
-			prendas = await getPrendas();
+			prendas = await getPrendas(abortCargaPrendas.signal);
 		} catch (err) {
-			listaPrendas.appendChild(crearElementoErr("No se han podido cargar las prendas: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				listaPrendas.appendChild(crearElementoErr("No se han podido cargar las prendas: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}

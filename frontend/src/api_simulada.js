@@ -68,24 +68,30 @@ let testEntregas = [
 	},
 ];
 
-async function fakeWait(time) {
-	await new Promise((resolve)=>setTimeout(resolve, time));
+async function fakeWait(time,abortSignal) {
+	let expiry = Date.now()+time;
+	while (Date.now() < expiry) {
+		await new Promise((resolve)=>setTimeout(resolve, 0));
+		if (abortSignal.aborted) {
+			throw new DOMException("Cancelado","AbortError");
+		}
+	}
 }
 
-async function getEntregas() {
+async function getEntregas(abortSignal) {
 	//todo
 	//test data
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testEntregas;
 }
-async function getEntregaId(id_entrega) {
+async function getEntregaId(id_entrega,abortSignal) {
 	//todo
 	//test data
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testEntregas.find((entrega)=>{ return entrega.id === id_entrega });
 }
-async function getEntregasCliente(id_cliente) {
-	await fakeWait(1000)
+async function getEntregasCliente(id_cliente,abortSignal) {
+	await fakeWait(1000,abortSignal)
 	return testEntregas.filter((entrega)=>{ return entrega.cliente_id == id_cliente });
 }
 
@@ -159,17 +165,17 @@ let testClientes = [
 		activo:true
 	}
 ];
-async function getClientes() {
+async function getClientes(abortSignal) {
 	//todo
 	//test data
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testClientes;
 }
 
-async function getClienteId(id) {
+async function getClienteId(id,abortSignal) {
 	//todo
 	//test data
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testClientes.find((cliente)=>{ return cliente.id == id });
 }
 
@@ -187,7 +193,7 @@ async function crearCliente(infoForm) {
 	testClientes.push(cliente);
 }
 
-async function updateCliente(id_cliente,infoForm) {
+let updateCliente = async function updateCliente(id_cliente,infoForm) {
 	let cliente = testClientes.find((v)=>{
 		return v.id == id_cliente;
 	});
@@ -197,7 +203,6 @@ async function updateCliente(id_cliente,infoForm) {
 	cliente.ciudad = infoForm.get("ciudad");
 	cliente.notas = infoForm.get("notas");
 	cliente.activo = infoForm.get("activo");
-	console.log(testClientes)
 	return cliente;
 }
 
@@ -239,15 +244,15 @@ async function postPago(cliente_id,infoForm) {
 	testPagos.push(pago);
 }
 
-async function getPagosCliente(cliente_id) {
-	await fakeWait(1000)
+async function getPagosCliente(cliente_id,abortSignal) {
+	await fakeWait(1000,abortSignal)
 	return testPagos.filter((pago)=>{
 		return pago.cliente_id == cliente_id
 	});
 }
 
-async function getDeudas() {
-	await fakeWait(1000)
+async function getDeudas(abortSignal) {
+	await fakeWait(1000,abortSignal)
 	let deudasTotales = {};
 	testEntregas.forEach((entrega)=>{
 		if (!deudasTotales[entrega.cliente_id]) {
@@ -276,8 +281,8 @@ async function getDeudas() {
 	return objetoComoArray;
 }
 
-async function getDeudaCliente(id_cliente) {
-	await fakeWait(1000)
+async function getDeudaCliente(id_cliente,abortSignal) {
+	await fakeWait(1000,abortSignal)
 	let deudaTotal = 0;
 	let compras = 0;
 	let pagos = 0;
@@ -377,29 +382,28 @@ let testPrendas = [
 		activo:true
 	}
 ];
-async function getPrendas() {
+async function getPrendas(abortSignal) {
 	//todo
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testPrendas;
 }
 
-async function getPrendaId(id_prenda) {
+async function getPrendaId(id_prenda,abortSignal) {
 	//todo
-	await fakeWait(1000)
+	await fakeWait(1000,abortSignal)
 	return testPrendas.find((prenda)=>{ return prenda.id == id_prenda });
 }
 
-async function getPrendasInEntrega(id_entrega) {
-	await fakeWait(1000)
-	let entrega = await getEntregaId(id_entrega);
+let getPrendasInEntrega = async function getPrendasInEntrega(id_entrega,abortSignal) {
+	let entrega = await getEntregaId(id_entrega,abortSignal);
 	let prendas = [];
 	await Promise.all(entrega.entrega_items.map(async (item)=>{
-		prendas.push(await getPrendaId(item.producto_id));
+		prendas.push(await getPrendaId(item.producto_id,abortSignal));
 	}));
 	return prendas;
 }
 
-async function postPrenda(infoForm) {
+let postPrenda = async function postPrenda(infoForm) {
 	let prenda = {
 		id:idPrendaDisponible,
 		descripcion:infoForm.get("descripcion"),
@@ -413,7 +417,7 @@ async function postPrenda(infoForm) {
 	testPrendas.push(prenda);
 }
 
-async function updatePrenda(id_prenda,infoForm) {
+let updatePrenda = async function updatePrenda(id_prenda,infoForm) {
 	let prenda = testPrendas.find((v)=>{
 		return v.id == id_prenda;
 	});
@@ -423,25 +427,3 @@ async function updatePrenda(id_prenda,infoForm) {
 	prenda.stock = new Number(infoForm.get("stock"));
 	prenda.activo = infoForm.get("activo");
 }
-
-let apiURL = "localhost/alumnos.php";
-async function fetchTest() {
-	try {
-		let httpResponse = await fetch(apiURL);
-		let json = undefined;
-		if (httpResponse.headers["Content-Type"] == "application/json") {
-			json = await httpResponse.json();
-		}
-		if (!httpResponse.ok) {
-			console.warn("uh oh");
-			throw new Error(json);
-		}
-		console.log("no problemo");
-		return json;
-	} catch (e) {
-		console.warn("could not do the fetch");
-		console.warn(e);
-	}
-}
-
-fetchTest();

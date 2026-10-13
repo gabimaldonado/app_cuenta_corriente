@@ -11,10 +11,11 @@ const URL_API_ENTREGAS = "../api/";
 // Manda un pedido a la API con el token y devuelve el JSON de la respuesta.
 // Si la API contesta con error (400, 404, 409, 500...), lanza un Error con
 // el mensaje que mandó el servidor, para que la pantalla lo muestre.
-async function pedirApiEntregas(ruta, metodo = "GET", datos = undefined) {
+async function pedirApiEntregas(ruta, metodo = "GET", datos = undefined, abortSignal) {
 	const opciones = {
 		method: metodo,
-		headers: { "Authorization": "Bearer " + localStorage.getItem("token") }
+		headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+		signal: abortSignal
 	};
 	if (datos !== undefined) {
 		opciones.headers["Content-Type"] = "application/json";
@@ -63,20 +64,20 @@ function convertirEntrega(entrega) {
 // ---------- Funciones que reemplazan a las de api.js ----------
 
 // Todas las entregas, cada una con su lista entrega_items
-async function getEntregas() {
-	const entregas = await pedirApiEntregas("entregas.php");
+async function getEntregas(abortSignal) {
+	const entregas = await pedirApiEntregas("entregas.php","GET",undefined,abortSignal);
 	return entregas.map(convertirEntrega);
 }
 
 // Una entrega por id (si no existe, la API contesta 404 y esto lanza un error)
-async function getEntregaId(id_entrega) {
-	const entrega = await pedirApiEntregas("entregas.php?id=" + id_entrega);
+async function getEntregaId(id_entrega,abortSignal) {
+	const entrega = await pedirApiEntregas("entregas.php?id=" + id_entrega,"GET",undefined,abortSignal);
 	return convertirEntrega(entrega);
 }
 
 // Las entregas de una clienta
-async function getEntregasCliente(id_cliente) {
-	const entregas = await pedirApiEntregas("entregas.php?cliente_id=" + id_cliente);
+async function getEntregasCliente(id_cliente,abortSignal) {
+	const entregas = await pedirApiEntregas("entregas.php?cliente_id=" + id_cliente,"GET",undefined,abortSignal);
 	return entregas.map(convertirEntrega);
 }
 
