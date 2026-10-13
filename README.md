@@ -138,6 +138,8 @@ _(A completar al final, con lo que quedó sin hacer o funciona con alguna restri
 
 ## Decisiones de cada módulo
 
+- **Pantallas.** En «Inicio», el botón «Nueva Entrega» abre un formulario donde se elige la clienta, se buscan y agregan prendas del catálogo (solo las que tienen stock) y se ve el total a prueba; al guardar se llama a `POST entregas.php`. En cada entrega abierta, «Confirmar >» abre la lista de prendas con «Se queda / Devuelve» y el importe que se suma al saldo; al confirmar se llama a `PUT confirmar_entrega.php`. Si la API responde con un error (por ejemplo, una prenda sin stock o una entrega ya cerrada), el mensaje se muestra en rojo dentro del popup y este no se cierra. Si el token venció, se vuelve a la pantalla de login.
+
 ### Base, login y seguridad
 
 - **Las contraseñas nunca se guardan en texto plano.** Se guardan con `password_hash()`, que las convierte en un texto irreversible. En el login se comparan con `password_verify()`. Si alguien llegara a ver la base, no podría saber las contraseñas.
