@@ -79,17 +79,15 @@ async function fakeWait(time,abortSignal) {
 }
 
 async function getEntregas(abortSignal) {
-	//todo
-	//test data
 	await fakeWait(1000,abortSignal)
 	return testEntregas;
 }
+
 async function getEntregaId(id_entrega,abortSignal) {
-	//todo
-	//test data
 	await fakeWait(1000,abortSignal)
 	return testEntregas.find((entrega)=>{ return entrega.id === id_entrega });
 }
+
 async function getEntregasCliente(id_cliente,abortSignal) {
 	await fakeWait(1000,abortSignal)
 	return testEntregas.filter((entrega)=>{ return entrega.cliente_id == id_cliente });
@@ -166,15 +164,11 @@ let testClientes = [
 	}
 ];
 async function getClientes(abortSignal) {
-	//todo
-	//test data
 	await fakeWait(1000,abortSignal)
 	return testClientes;
 }
 
 async function getClienteId(id,abortSignal) {
-	//todo
-	//test data
 	await fakeWait(1000,abortSignal)
 	return testClientes.find((cliente)=>{ return cliente.id == id });
 }
@@ -193,9 +187,9 @@ async function crearCliente(infoForm) {
 	testClientes.push(cliente);
 }
 
-let updateCliente = async function updateCliente(id_cliente,infoForm) {
+async function updateCliente(clienteA,infoForm) {
 	let cliente = testClientes.find((v)=>{
-		return v.id == id_cliente;
+		return v.id == clienteA.id;
 	});
 	cliente.telefono = infoForm.get("telefono");
 	cliente.dni = infoForm.get("dni");
@@ -273,9 +267,9 @@ async function getDeudas(abortSignal) {
 	Object.entries(deudasTotales).forEach(([llave,valor])=>{
 		objetoComoArray.push({
 			cliente_id:llave,
-			deuda:valor.deuda,
-			compras:valor.compras,
-			pagos:valor.pagos
+			saldo_actual:valor.deuda,
+			total_compras:valor.compras,
+			total_pagos:valor.pagos
 		})
 	})
 	return objetoComoArray;
@@ -383,18 +377,16 @@ let testPrendas = [
 	}
 ];
 async function getPrendas(abortSignal) {
-	//todo
 	await fakeWait(1000,abortSignal)
 	return testPrendas;
 }
 
 async function getPrendaId(id_prenda,abortSignal) {
-	//todo
 	await fakeWait(1000,abortSignal)
 	return testPrendas.find((prenda)=>{ return prenda.id == id_prenda });
 }
 
-let getPrendasInEntrega = async function getPrendasInEntrega(id_entrega,abortSignal) {
+async function getPrendasInEntrega(id_entrega,abortSignal) {
 	let entrega = await getEntregaId(id_entrega,abortSignal);
 	let prendas = [];
 	await Promise.all(entrega.entrega_items.map(async (item)=>{
@@ -403,7 +395,7 @@ let getPrendasInEntrega = async function getPrendasInEntrega(id_entrega,abortSig
 	return prendas;
 }
 
-let postPrenda = async function postPrenda(infoForm) {
+async function postPrenda(infoForm) {
 	let prenda = {
 		id:idPrendaDisponible,
 		descripcion:infoForm.get("descripcion"),
@@ -417,9 +409,9 @@ let postPrenda = async function postPrenda(infoForm) {
 	testPrendas.push(prenda);
 }
 
-let updatePrenda = async function updatePrenda(id_prenda,infoForm) {
+async function updatePrenda(prendaActual,infoForm) {
 	let prenda = testPrendas.find((v)=>{
-		return v.id == id_prenda;
+		return v.id == prendaActual.id;
 	});
 	prenda.talle = infoForm.get("talle");
 	prenda.color = infoForm.get("color");

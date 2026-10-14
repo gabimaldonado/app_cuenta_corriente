@@ -14,18 +14,23 @@ async function pedirApi(ruta, metodo = "GET", datos = undefined, abortSignal) {
 
 	// fetch solo falla si no hubo respuesta (Apache apagado, sin red...)
 	let respuesta;
+	let json;
 	try {
 		respuesta = await fetch(URL_API + ruta, opciones);
+		// Puede que la respuesta no sea JSON; en ese caso json queda en undefined
+		let contentType = respuesta.headers.get("content-type");
+		if (contentType != undefined && contentType.includes("application/json")) {
+			json = await respuesta.json();
+		} else {
+			json = undefined;
+		}
 	} catch (error) {
+		//Si cancelamos desde abort controller con .abort, subimos ese error hacia arriba para que pueda manejarse.
+		if (error.name === "AbortError") {
+			throw error;
+		}
+		//Cualquier otro error lo consideramos como error de conexion.
 		throw new Error("No se pudo conectar con el servidor");
-	}
-
-	// Puede que la respuesta no sea JSON; en ese caso json queda en undefined
-	let json = undefined;
-	try {
-		json = await respuesta.json();
-	} catch (error) {
-		json = undefined;
 	}
 
 	// 401: el token falta o venció, hay que volver a loguearse

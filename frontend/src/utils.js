@@ -87,7 +87,7 @@ function abrirPagina(id) {
 
 function manejarAbort(controller) {
 	if (controller) {
-		controller.abort("Cancelado");
+		controller.abort(new DOMException("Cancelado","AbortError"));
 	}
 	return new AbortController();
 }

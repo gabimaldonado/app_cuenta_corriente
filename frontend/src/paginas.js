@@ -267,7 +267,7 @@ const paginaClientes = (()=>{
 			if (err.name != "AbortError") {
 				listaClientes.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
 			}
-			throw err;
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
