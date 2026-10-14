@@ -1,0 +1,15 @@
+# Dockerfile — la misma pila de XAMPP (Apache + PHP), pero en un contenedor
+FROM php:8.2-apache
+
+# PDO para MySQL (cURL ya viene incluido en esta imagen)
+RUN docker-php-ext-install pdo_mysql
+
+# Apache escucha en el puerto que indique el proveedor (variable PORT); por defecto, 80
+ENV PORT=80
+RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
+
+COPY . /var/www/html/
+
+# Arreglo para Railway: Apache solo puede usar UN modo de trabajo (MPM).
+# Antes de arrancar, se apagan los que sobran y se deja "prefork" (el que necesita PHP).
+CMD ["bash", "-c", "a2dismod mpm_event mpm_worker || true; rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; a2enmod mpm_prefork; exec apache2-foreground"]

@@ -8,7 +8,7 @@ require_once __DIR__ . "/config.php";
 try {
     // Abre la conexión con PDO, usando los datos de config.php
     $conexion = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
+        "mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4",
         DB_USER,
         DB_PASS
     );
