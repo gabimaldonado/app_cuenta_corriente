@@ -9,3 +9,7 @@ ENV PORT=80
 RUN sed -i 's/80/${PORT}/g' /etc/apache2/ports.conf /etc/apache2/sites-available/000-default.conf
 
 COPY . /var/www/html/
+
+# Arreglo para Railway: Apache solo puede usar UN modo de trabajo (MPM).
+# Antes de arrancar, se apagan los que sobran y se deja "prefork" (el que necesita PHP).
+CMD ["bash", "-c", "a2dismod mpm_event mpm_worker || true; rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*; a2enmod mpm_prefork; exec apache2-foreground"]
