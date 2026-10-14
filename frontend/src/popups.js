@@ -132,14 +132,18 @@ const popupConfirmarEntrega = (()=>{
 
 	self.formulario.addEventListener("submit", async (event)=>{
 		event.preventDefault();
+		if (self.submitted) {
+			return;
+		}
+		self.submitted = true;
 		avisoError.innerHTML = "";
 		try {
 			await confirmarEntrega(self.entregaActual.id, getEstadoPrendas());
 		} catch (err) {
 			avisoError.appendChild(crearElementoErr("No se pudo confirmar la entrega: " + err.message));
+			self.submitted = false;
 			return;
 		}
-		self.submitted = true;
 		self.popup.close();
 	});
 
@@ -163,8 +167,8 @@ const popupNuevaEntrega = (()=>{
 	const busquedaClienta = document.getElementById("NE-busquedaClienta");
 	const datalistClientes = document.getElementById("NE-datalistClientes");
 
-	let opcionesPrendas = undefined;
-	let opcionesClientes = undefined;
+	let opcionesPrendas = [];
+	let opcionesClientes = [];
 	self.abrir = (nombreCliente)=>{
 		self.submitted = false;
 		self.popup.showModal();
@@ -176,14 +180,15 @@ const popupNuevaEntrega = (()=>{
 		self.prendasSeleccionadas = [];
 		listaPrendas.innerHTML = "";
 
-		generarOpciones();
+		verificarValidezClienta();
+		generarOpciones().then(verificarValidezClienta);
 		actualizarMontos();
 	};
 
 	self.popup.addEventListener("close",(event)=>{
 		self.prendasSeleccionadas = undefined;
-		opcionesPrendas = undefined;
-		opcionesClientes = undefined;
+		opcionesPrendas = [];
+		opcionesClientes = [];
 	});
 
 	const contenedorError = document.getElementById("NE-err")
@@ -283,14 +288,17 @@ const popupNuevaEntrega = (()=>{
 		}
 	}
 
-	busquedaClienta.addEventListener("input",(event)=>{
+
+	function verificarValidezClienta() {
 		const clienta = opcionesClientes[busquedaClienta.value];
 		if (clienta) {
 			busquedaClienta.setCustomValidity("");
 		} else {
 			busquedaClienta.setCustomValidity("Por favor seleccione un cliente valido");
 		}
-	});
+	}
+
+	busquedaClienta.addEventListener("input",verificarValidezClienta);
 
 	busquedaPrenda.addEventListener("input",(event)=>{
 		const prenda = opcionesPrendas[busquedaPrenda.value];
@@ -300,17 +308,21 @@ const popupNuevaEntrega = (()=>{
 		}
 	});
 
-		self.formulario.addEventListener("submit", async (event)=>{
+	self.formulario.addEventListener("submit", async (event)=>{
 		event.preventDefault();
+		if (self.submitted) {
+			return;
+		}
+		self.submitted = true;
 		const clienta = opcionesClientes[busquedaClienta.value];
 		contenedorError.innerHTML = "";
 		try {
 			await postEntrega(clienta, self.prendasSeleccionadas);
 		} catch (err) {
 			contenedorError.appendChild(crearElementoErr("No se pudo guardar la entrega: " + err.message));
+			self.submitted = false;
 			return;
 		}
-		self.submitted = true;
 		self.popup.close();
 	});
 
@@ -416,12 +428,22 @@ const popupRegistrarPago = (()=>{
 		}
 	}
 
-	self.formulario.addEventListener("submit",(event)=>{
+	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
+		if (self.submitted) {
+			return;
+		}
+		contenedorErrorOpciones.innerHTML = "";
+		self.submitted = true;
 		const clienta = opcionesClientes[busquedaClienta.value];
 		const infoForm = new FormData(self.formulario);
-		postPago(clienta.id,infoForm);
-		self.submitted = true;
+		try {
+			await postPago(clienta.id,infoForm);
+		} catch (err) {
+			contenedorErrorOpciones.appendChild(crearElementoErr("No se pudo registrar el pago: "+err));
+			self.submitted = false;
+			return;
+		}
 		self.popup.close();
 	});
 
@@ -436,16 +458,28 @@ const popupNuevoCliente = (()=>{
 		submitted: false,
 	};
 	
+	const contenedorError = document.getElementById("NC-err")
 	self.abrir = ()=>{
+		contenedorError.innerHTML = "";
 		self.submitted = false;
 		self.popup.showModal();
 	};
 	
-	self.formulario.addEventListener("submit",(event)=>{
+	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
-		const infoForm = new FormData(self.formulario);
-		crearCliente(infoForm);
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
 		self.submitted = true;
+		const infoForm = new FormData(self.formulario);
+		try {
+			await crearCliente(infoForm);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo crear el cliente: "+err));
+			self.submitted = false;
+			return;
+		}
 		self.popup.close();
 	});
 	return self;
@@ -459,15 +493,27 @@ const popupNuevaPrenda = (()=>{
 		submitted: false,
 	};
 
+	const contenedorError = document.getElementById("NP-err")
 	self.abrir = ()=>{
+		contenedorError.innerHTML = "";
 		self.submitted = false;
 		self.popup.showModal();
 	};
-	self.formulario.addEventListener("submit",(event)=>{
+	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
-		const infoForm = new FormData(self.formulario);
-		postPrenda(infoForm);
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
 		self.submitted = true;
+		const infoForm = new FormData(self.formulario);
+		try {
+			await postPrenda(infoForm);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo crear la prenda: "+err));
+			self.submitted = false;
+			return;
+		}
 		self.popup.close();
 	});
 	return self;
@@ -483,14 +529,16 @@ const actualizarDatosCliente = (()=>{
 	};
 
 	let clienteActual = undefined;
-	const titulo = document.getElementById("EDC-nombre")
+	const contenedorError = document.getElementById("EDC-err");
+	const titulo = document.getElementById("EDC-nombre");
 	const inputTelefono = document.getElementById("EDC-telefono");
 	const inputDNI = document.getElementById("EDC-dni");
 	const inputDireccion = document.getElementById("EDC-direccion");
 	const inputCiudad = document.getElementById("EDC-ciudad");
 	const inputNotas = document.getElementById("EDC-notas");
-	const inputActivo = document.getElementById("EDC-activo")
+	const inputActivo = document.getElementById("EDC-activo");
 	self.abrir = (infoCliente)=>{
+		contenedorError.innerHTML = "";
 		titulo.innerText = "Editando: "+infoCliente.nombre;
 		inputTelefono.value = infoCliente.telefono;
 		inputDNI.value = infoCliente.dni ?? "";
@@ -507,11 +555,21 @@ const actualizarDatosCliente = (()=>{
 		clienteActual = undefined;
 	});
 
-	self.formulario.addEventListener("submit",(event)=>{
+	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
-		let infoForm = new FormData(self.formulario);
-		self.resultado = updateCliente(clienteActual,infoForm);
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
 		self.submitted = true;
+		const infoForm = new FormData(self.formulario);
+		try {
+			self.resultado = await updateCliente(clienteActual,infoForm);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo actualizar el cliente: "+err));
+			self.submitted = false;
+			return;
+		}
 		self.popup.close();
 	});
 
@@ -573,6 +631,7 @@ const popupDatosCliente = (()=>{
 			if (err.name != "AbortError") {
 				saldoCliente.innerText = "Error de carga";
 				descripcionSaldo.innerText = "Error de carga";
+				console.log(err)
 			}
 			return;
 		} finally {
@@ -724,7 +783,7 @@ const popupDatosCliente = (()=>{
 		titulo.innerText = 
 			"Compra - "
 			+cantItems.toString()
-			+(cantItems != 1 ? " prendas" : "prenda");
+			+(cantItems != 1 ? " prendas" : " prenda");
 		divLeft.appendChild(titulo);
 
 		const desc = document.createElement("p");
@@ -802,7 +861,7 @@ const popupDatosCliente = (()=>{
 			if (!actualizarDatosCliente.submitted) {
 				return;
 			}
-			actualizarDatosCliente.resultado.then(refrescarCliente);
+			refrescarCliente(actualizarDatosCliente.resultado);
 			self.submitted = true;
 		})
 	})
@@ -819,13 +878,15 @@ const popupDatosPrenda = (()=>{
 	};
 
 	let prendaActual = undefined;
+	const contenedorError = document.getElementById("DP-err");
 	const titulo = document.getElementById("DP-nombre");
 	const inputTalle = document.getElementById("DP-talle");
 	const inputColor = document.getElementById("DP-color");
 	const inputPrecio = document.getElementById("DP-precio");
 	const inputStock = document.getElementById("DP-stock");
-	const inputActivo = document.getElementById("DP-activo")
+	const inputActivo = document.getElementById("DP-activo");
 	self.abrir = (infoPrenda)=>{
+		contenedorError.innerHTML = "";
 		titulo.innerText = infoPrenda.descripcion;
 		inputTalle.value = infoPrenda.talle ?? "";
 		inputColor.value = infoPrenda.color ?? "";
@@ -840,11 +901,21 @@ const popupDatosPrenda = (()=>{
 		prendaActual = undefined;
 	});
 
-	self.formulario.addEventListener("submit",(event)=>{
+	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
-		let infoForm = new FormData(self.formulario);
-		updatePrenda(prendaActual,infoForm);
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
 		self.submitted = true;
+		let infoForm = new FormData(self.formulario);
+		try {
+			await updatePrenda(prendaActual,infoForm);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se ha podido actualizar la prenda: "+err));
+			self.submitted = false;
+			return;
+		}
 		self.popup.close();
 	});
 

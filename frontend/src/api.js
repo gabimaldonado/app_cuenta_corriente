@@ -59,19 +59,19 @@ function convertirFecha(info) {
 // Todas las entregas, cada una con su lista entrega_items
 async function getEntregas(abortSignal) {
 	const entregas = await pedirApi("entregas.php","GET",undefined,abortSignal);
-	return entregas.map(convertirEntrega);
+	return entregas.map(convertirFecha);
 }
 
 // Una entrega por id (si no existe, la API contesta 404 y esto lanza un error)
 async function getEntregaId(id_entrega,abortSignal) {
 	const entrega = await pedirApi("entregas.php?id=" + id_entrega,"GET",undefined,abortSignal);
-	return convertirEntrega(entrega);
+	return convertirFecha(entrega);
 }
 
 // Las entregas de una clienta
 async function getEntregasCliente(id_cliente,abortSignal) {
 	const entregas = await pedirApi("entregas.php?cliente_id=" + id_cliente,"GET",undefined,abortSignal);
-	return entregas.map(convertirEntrega);
+	return entregas.map(convertirFecha);
 }
 
 // Crea una entrega: la API recibe el id de la clienta y los ids de las prendas
@@ -179,7 +179,8 @@ async function updatePrenda(prendaActual,infoForm) {
 //---------------PAGOS---------------//
 
 async function getPagosCliente(cliente_id,abortSignal) {
-	return await pedirApi("pagos.php?cliente_id="+cliente_id,"GET",undefined,abortSignal);
+	let pagos = await pedirApi("pagos.php?cliente_id="+cliente_id,"GET",undefined,abortSignal);
+	return pagos.map(convertirFecha);
 }
 
 async function postPago(cliente_id,infoForm) {
@@ -195,14 +196,14 @@ async function postPago(cliente_id,infoForm) {
 async function getDeudas(abortSignal) {
 	let clientes = await getClientes(abortSignal);
 	let deudas = [];
-	await Promise.all(clientes.map((cliente)=>{
-		let resumen = pedirApi("resumen.php?cliente_id="+cliente.id,"GET",undefined,abortSignal);
+	await Promise.all(clientes.map(async (cliente)=>{
+		let resumen = await pedirApi("resumen.php?cliente_id="+cliente.id,"GET",undefined,abortSignal);
 		deudas.push(resumen);
 	}));
 	return deudas;
 }
 
 async function getDeudaCliente(id_cliente,abortSignal) {
-	let resumen = await pedirApi("resumen.php?cliente_id="+id_cliente,"GET",pago,abortSignal);
+	let resumen = await pedirApi("resumen.php?cliente_id="+id_cliente,"GET",undefined,abortSignal);
 	return [resumen.saldo_actual,resumen.total_compras,resumen.total_pagos];
 }

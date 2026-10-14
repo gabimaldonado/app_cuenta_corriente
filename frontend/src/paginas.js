@@ -130,7 +130,7 @@ const paginaInicio = (()=>{
 				}
 				cantDeudores++;
 				deudaTotal += info.saldo_actual;
-				let infoCliente = await getClienteId(info.cliente_id,abortCargaDeudores.signal);
+				let infoCliente = await getClienteId(info.cliente.id,abortCargaDeudores.signal);
 				if (!infoCliente.activo) {
 					return;
 				}
@@ -274,7 +274,7 @@ const paginaClientes = (()=>{
 	
 		clientes.forEach((info)=>{
 			let deuda = deudas.find((infoDeuda)=>{
-				return infoDeuda.cliente_id == info.id;
+				return infoDeuda.cliente.id == info.id;
 			}) ?? {saldo_actual:0};
 			deuda = deuda.saldo_actual;
 			

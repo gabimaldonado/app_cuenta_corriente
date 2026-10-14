@@ -201,6 +201,7 @@
 				<a class="popupBack">&lt;</a>
 				<h2>Nuevo Cliente</h2>
 			</header>
+			<div id="NC-err"></div>
 			<form id="NC-formulario">
 				<label for="NC-nombre">Nombre y Apellido*</label>
 				<input id="NC-nombre" name="nombre" type="text" placeholder="Nombre y Apellido" maxlength="100" required>
@@ -227,6 +228,7 @@
 				<a class="popupBack">&lt;</a>
 				<h2>Nueva Prenda</h2>
 			</header>
+			<div id="NP-err"></div>
 			<form id="NP-formulario">
 				<label for="NP-descripcion">Descripcion*</label>
 				<input id="NP-descripcion" name="descripcion" type="text" placeholder="Descripcion" maxlength="100" required>
@@ -290,6 +292,7 @@
 				<a class="popupBack">&lt;</a>
 				<h2 id="EDC-nombre">Editando Nombre y Apellido</h2>
 			</header>
+			<div id="EDC-err"></div>
 			<form id="EDC-formulario">
 				<label for="EDC-telefono">Telefono*</label>
 				<input id="EDC-telefono" name="telefono" type="tel", placeholder="Telefono" required>
@@ -301,8 +304,8 @@
 				<input id="EDC-ciudad" name="ciudad" type="text" maxlength="100" placeholder="Ciudad">
 				<label for="EDC-notas">Notas</label>
 				<textarea id="EDC-notas" name="notas" type="text" maxlength="255" placeholder="Notas"></textarea>
-				<label for="EDC-activo">Activo*</label>
-				<div class="slider">
+				<!--<label for="EDC-activo">Activo*</label>-->
+				<div class="slider" hidden>
 					<input id="EDC-activo" name="activo" type="checkbox">
 					<label for="EDC-activo"></label>
 				</div>
@@ -319,6 +322,7 @@
 				<a class="popupBack">&lt;</a>
 				<h2 id="DP-nombre">Jean Recto</h2>
 			</header>
+			<div id="DP-err"></div>
 			<form id="DP-formulario">
 				<label for="DP-talle">Talle</label>
 				<input id="DP-talle" name="talle" type="text" maxlength="10" placeholder="Talle">
@@ -328,8 +332,8 @@
 				<input id="DP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
 				<label for="DP-stock">Stock*</label>
 				<input id="DP-stock" name="stock" type="number" min="0" placeholder="Stock" required>
-				<label for="DP-activo">Activo*</label>
-				<div class="slider">
+				<!--<label for="DP-activo">Activo*</label>-->
+				<div class="slider" hidden>
 					<input id="DP-activo" name="activo" type="checkbox">
 					<label for="DP-activo"></label>
 				</div>

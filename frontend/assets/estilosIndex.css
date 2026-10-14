@@ -101,7 +101,7 @@ footer nav {
 		padding: 20px;
 	}
 
-	& > p {
+	& > p, & > div > .error {
 		padding-left: 10px;
 	}
 
