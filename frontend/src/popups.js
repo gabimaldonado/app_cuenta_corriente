@@ -482,7 +482,7 @@ const actualizarDatosCliente = (()=>{
 		resultado:undefined
 	};
 
-	let id_clienteActual = undefined;
+	let clienteActual = undefined;
 	const titulo = document.getElementById("EDC-nombre")
 	const inputTelefono = document.getElementById("EDC-telefono");
 	const inputDNI = document.getElementById("EDC-dni");
@@ -498,19 +498,19 @@ const actualizarDatosCliente = (()=>{
 		inputCiudad.value = infoCliente.ciudad ?? "";
 		inputNotas.value = infoCliente.notas ?? "";
 		inputActivo.checked = infoCliente.activo ?? false;
-		id_clienteActual = infoCliente.id;
+		clienteActual = infoCliente;
 		self.submitted = false;
 		self.resultado = undefined;
 		self.popup.showModal();
 	};
 	self.popup.addEventListener("close",()=>{
-		id_clienteActual = undefined;
+		clienteActual = undefined;
 	});
 
 	self.formulario.addEventListener("submit",(event)=>{
 		event.preventDefault();
 		let infoForm = new FormData(self.formulario);
-		self.resultado = updateCliente(id_clienteActual,infoForm);
+		self.resultado = updateCliente(clienteActual,infoForm);
 		self.submitted = true;
 		self.popup.close();
 	});
@@ -818,7 +818,7 @@ const popupDatosPrenda = (()=>{
 		abrir:undefined
 	};
 
-	let id_prendaActual = undefined;
+	let prendaActual = undefined;
 	const titulo = document.getElementById("DP-nombre");
 	const inputTalle = document.getElementById("DP-talle");
 	const inputColor = document.getElementById("DP-color");
@@ -832,18 +832,18 @@ const popupDatosPrenda = (()=>{
 		inputPrecio.value = infoPrenda.precio ?? 0;
 		inputStock.value = infoPrenda.stock ?? 0;
 		inputActivo.checked = infoPrenda.activo ?? false;
-		id_prendaActual = infoPrenda.id;
+		prendaActual = infoPrenda;
 		self.submitted = false;
 		self.popup.showModal();
 	};
 	self.popup.addEventListener("close",()=>{
-		id_prendaActual = undefined;
+		prendaActual = undefined;
 	});
 
 	self.formulario.addEventListener("submit",(event)=>{
 		event.preventDefault();
 		let infoForm = new FormData(self.formulario);
-		updatePrenda(id_prendaActual,infoForm);
+		updatePrenda(prendaActual,infoForm);
 		self.submitted = true;
 		self.popup.close();
 	});

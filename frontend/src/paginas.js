@@ -125,11 +125,11 @@ const paginaInicio = (()=>{
 		try {
 			deudas = await getDeudas(abortCargaDeudores.signal);
 			await Promise.all(deudas.map(async (info)=>{
-				if (info.deuda <= 0) {
+				if (info.saldo_actual <= 0) {
 					return;
 				}
 				cantDeudores++;
-				deudaTotal += info.deuda;
+				deudaTotal += info.saldo_actual;
 				let infoCliente = await getClienteId(info.cliente_id,abortCargaDeudores.signal);
 				if (!infoCliente.activo) {
 					return;
@@ -148,7 +148,7 @@ const paginaInicio = (()=>{
 			elementoCarga.remove();
 		}
 		deudas.sort((infoA,infoB) => {
-			return (infoB.deuda-infoA.deuda);
+			return (infoB.saldo_actual-infoA.saldo_actual);
 		});
 
 		
@@ -174,7 +174,7 @@ const paginaInicio = (()=>{
 		divisorInfoCliente.appendChild(visNombreCliente);
 
 		const visDeuda = document.createElement("p");
-		visDeuda.innerText = "$ "+formatearMonto(infoDeuda.deuda,3,2);
+		visDeuda.innerText = "$ "+formatearMonto(infoDeuda.saldo_actual,3,2);
 		visDeuda.classList.add("precioDeuda");
 		elementoLista.appendChild(visDeuda);
 
@@ -275,8 +275,8 @@ const paginaClientes = (()=>{
 		clientes.forEach((info)=>{
 			let deuda = deudas.find((infoDeuda)=>{
 				return infoDeuda.cliente_id == info.id;
-			}) ?? {deuda:0};
-			deuda = deuda.deuda;
+			}) ?? {saldo_actual:0};
+			deuda = deuda.saldo_actual;
 			
 			if (infoFiltrada(tipoFiltro,entregas,deuda,info)) {
 				return;
