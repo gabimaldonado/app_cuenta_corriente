@@ -19,7 +19,10 @@ const popupConfirmarEntrega = (()=>{
 		cargarPrendas();
 	};
 	
+	let abortCargaPrendas = undefined;
 	async function cargarPrendas() {
+		abortCargaPrendas = manejarAbort(abortCargaPrendas);
+
 		self.formulario.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		self.formulario.appendChild(elementoCarga);
@@ -28,12 +31,14 @@ const popupConfirmarEntrega = (()=>{
 
 		let prendasEntrega = [];
 		try {
-			prendasEntrega = await getPrendasInEntrega(self.entregaActual.id);
+			prendasEntrega = await getPrendasInEntrega(self.entregaActual.id,abortCargaPrendas.signal);
 		} catch (err) {
-			self.formulario.appendChild(crearElementoErr("No se han podido cargar los prendas asociadas a esta entrega: "+err));
-			descFooter.innerText = "Error de carga";
-			deudaFooter.innerText = "Error de carga";
-			throw err;
+			if (err.name != "AbortError") {
+				self.formulario.appendChild(crearElementoErr("No se han podido cargar las prendas asociadas a esta entrega: "+err));
+				descFooter.innerText = "Error de carga";
+				deudaFooter.innerText = "Error de carga";
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -182,18 +187,23 @@ const popupNuevaEntrega = (()=>{
 	});
 
 	const contenedorError = document.getElementById("NE-err")
+	let abortCargaOpciones = undefined;
 	async function generarOpciones() {
+		abortCargaOpciones = manejarAbort(abortCargaOpciones);
+
 		contenedorError.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		contenedorError.appendChild(elementoCarga);
 
 		let prendas = undefined;
 		try {
-			prendas = await getPrendas();
-			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+			prendas = await getPrendas(abortCargaOpciones.signal);
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes,abortCargaOpciones.signal);
 		} catch (err) {
-			contenedorError.appendChild(crearElementoErr("No se han podido cargar las opciones de prendas/clientes seleccionables: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				contenedorError.appendChild(crearElementoErr("No se han podido cargar las opciones de prendas/clientes seleccionables: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -202,6 +212,10 @@ const popupNuevaEntrega = (()=>{
 		opcionesPrendas = {};
 		datalistPrendas.innerHTML = "";
 		prendas.forEach((prenda)=>{
+			if (!prenda.activo) {
+				return;
+			}
+
 			if (prenda.stock <= 0) {
 				return;
 			}
@@ -331,15 +345,20 @@ const popupRegistrarPago = (()=>{
 	});
 	
 	const contenedorErrorOpciones = document.getElementById("RP-errOpciones")
+	let abortCargaOpciones = undefined;
 	async function cargarOpciones() {
+		abortCargaOpciones = manejarAbort(abortCargaOpciones);
+
 		contenedorErrorOpciones.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		contenedorErrorOpciones.appendChild(elementoCarga);
 		try {
-			opcionesClientes = await generarListaOpcionesClientes(datalistClientes);
+			opcionesClientes = await generarListaOpcionesClientes(datalistClientes,abortCargaOpciones.signal);
 		} catch (err) {
-			contenedorErrorOpciones.appendChild(crearElementoErr("No se han podido cargar los clientes seleccionables: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				contenedorErrorOpciones.appendChild(crearElementoErr("No se han podido cargar los clientes seleccionables: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -347,10 +366,11 @@ const popupRegistrarPago = (()=>{
 
 	const visSaldo = document.getElementById("RP-saldoCliente");
 	const saldoRestante = document.getElementById("RP-saldoRestante")
+	let abortCargaSaldo = undefined;
 	async function actualizarSaldoVisible() {
+		abortCargaSaldo = manejarAbort(abortCargaSaldo);
+
 		const clienta = opcionesClientes[busquedaClienta.value];
-		let clientaValida = true;
-		
 		let saldo = undefined;
 
 		if (!clienta) {
@@ -362,15 +382,17 @@ const popupRegistrarPago = (()=>{
 		busquedaClienta.setCustomValidity("Clienta cargandose...");
 		visSaldo.innerText = "Cargando...";
 		try {
-			[saldo] = await getDeudaCliente(clienta.id);
+			[saldo] = await getDeudaCliente(clienta.id,abortCargaSaldo.signal);
 			busquedaClienta.setCustomValidity("");
 			visSaldo.innerText = "$ "+formatearMonto(saldo,3,2);
 			saldoClienta = saldo;
 		} catch (err) {
-			busquedaClienta.setCustomValidity("Error de carga, intente nuevamente.");
-			visSaldo.innerText = "Error de carga";
+			if (err.name != "AbortError") {
+				busquedaClienta.setCustomValidity("Error de carga, intente nuevamente.");
+				visSaldo.innerText = "Error de carga";
+			}
 			saldoClienta = 0;
-			throw err;
+			return;
 		} finally {
 			verificarMontoIngresado();
 		}
@@ -451,6 +473,51 @@ const popupNuevaPrenda = (()=>{
 	return self;
 })();
 
+const actualizarDatosCliente = (()=>{
+	let self = {
+		popup:document.getElementById("popupEditarDatosCliente"),
+		formulario:document.getElementById("EDC-formulario"),
+		submitted:false,
+		abrir:undefined,
+		resultado:undefined
+	};
+
+	let clienteActual = undefined;
+	const titulo = document.getElementById("EDC-nombre")
+	const inputTelefono = document.getElementById("EDC-telefono");
+	const inputDNI = document.getElementById("EDC-dni");
+	const inputDireccion = document.getElementById("EDC-direccion");
+	const inputCiudad = document.getElementById("EDC-ciudad");
+	const inputNotas = document.getElementById("EDC-notas");
+	const inputActivo = document.getElementById("EDC-activo")
+	self.abrir = (infoCliente)=>{
+		titulo.innerText = "Editando: "+infoCliente.nombre;
+		inputTelefono.value = infoCliente.telefono;
+		inputDNI.value = infoCliente.dni ?? "";
+		inputDireccion.value = infoCliente.direccion ?? "";
+		inputCiudad.value = infoCliente.ciudad ?? "";
+		inputNotas.value = infoCliente.notas ?? "";
+		inputActivo.checked = infoCliente.activo ?? false;
+		clienteActual = infoCliente;
+		self.submitted = false;
+		self.resultado = undefined;
+		self.popup.showModal();
+	};
+	self.popup.addEventListener("close",()=>{
+		clienteActual = undefined;
+	});
+
+	self.formulario.addEventListener("submit",(event)=>{
+		event.preventDefault();
+		let infoForm = new FormData(self.formulario);
+		self.resultado = updateCliente(clienteActual,infoForm);
+		self.submitted = true;
+		self.popup.close();
+	});
+
+	return self;
+})();
+
 const popupDatosCliente = (()=>{
 	let self = {
 		popup:document.getElementById("popupDatosCliente"),
@@ -461,12 +528,10 @@ const popupDatosCliente = (()=>{
 
 	const tituloPopup = document.getElementById("DC-nombre");
 	const visualizacionTelefonoDni = document.getElementById("DC-numYDni");
+	const visualizacionNota = document.getElementById("DC-notas")
 	self.abrir = (infoCliente)=>{
 		self.submitted = false;
-		self.clienteActual = infoCliente;
-		tituloPopup.innerText = infoCliente.nombre;
-		visualizacionTelefonoDni.innerText = "+"+infoCliente.telefono+" - "+(infoCliente.dni != undefined ? "DNI "+infoCliente.dni : "Sin DNI registrado");
-
+		refrescarCliente(infoCliente)
 		self.popup.showModal();
 
 		refrescarSaldo();
@@ -478,36 +543,60 @@ const popupDatosCliente = (()=>{
 		self.clienteActual = undefined;
 	});
 
+	function refrescarCliente(nuevaInfo) {
+		self.clienteActual = nuevaInfo;
+		tituloPopup.innerHTML = "";
+		tituloPopup.innerText = nuevaInfo.nombre+" ";
+		if (!nuevaInfo.activo) {
+			let visInactivo = document.createElement("span");
+			visInactivo.style.color = "red";
+			visInactivo.innerText = "(Inactivo)";
+			tituloPopup.appendChild(visInactivo);
+		}
+		visualizacionTelefonoDni.innerText = "+"+nuevaInfo.telefono+" - "+(nuevaInfo.dni != undefined ? "DNI "+nuevaInfo.dni : "Sin DNI registrado");
+		visualizacionNota.innerText = nuevaInfo.notas ?? "Sin nota";
+	}
+
 	const saldoCliente = document.getElementById("DC-saldo");
 	const descripcionSaldo = document.getElementById("DC-comprasPagos")
+	let abortCargaSaldo = undefined;
 	async function refrescarSaldo() {
+		abortCargaSaldo = manejarAbort(abortCargaSaldo);
+
 		saldoCliente.innerText = "Cargando...";
 		descripcionSaldo.innerText = "Cargando...";
 		try {
-			const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id);
+			const [saldo,compras,pagos] = await getDeudaCliente(self.clienteActual.id,abortCargaSaldo.signal);
 			saldoCliente.innerText = "$ "+formatearMonto(saldo,3,2);
 			descripcionSaldo.innerText = "Compras $ "+formatearMonto(compras,3,2)+" - Pagos $ "+formatearMonto(pagos,3,2);
 		} catch (err) {
-			saldoCliente.innerText = "Error de carga";
-			descripcionSaldo.innerText = "Error de carga";
-			throw err;
+			if (err.name != "AbortError") {
+				saldoCliente.innerText = "Error de carga";
+				descripcionSaldo.innerText = "Error de carga";
+			}
+			return;
 		} finally {
 			//uuu
 		}
 	}
 
 	const listaEntregas = document.getElementById("DC-listaEntregas");
+	let abortCargaEntregas = undefined;
 	async function cargarEntregas() {
+		abortCargaEntregas = manejarAbort(abortCargaEntregas);
+
 		listaEntregas.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaEntregas.append(elementoCarga);
 
 		let entregas = undefined;
 		try {
-			entregas = await getEntregasCliente(self.clienteActual.id);
+			entregas = await getEntregasCliente(self.clienteActual.id,abortCargaEntregas.signal);
 		} catch (err) {
-			listaEntregas.appendChild(crearElementoErr("No se han podido cargar las entregas: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				listaEntregas.appendChild(crearElementoErr("No se han podido cargar las entregas: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -560,7 +649,10 @@ const popupDatosCliente = (()=>{
 	}
 
 	const listaMovimientos = document.getElementById("DC-listaMovimientos");
+	let abortCargaMovimientos = undefined;
 	async function cargarMovimientos() {
+		abortCargaMovimientos = manejarAbort(abortCargaMovimientos);
+
 		listaMovimientos.innerHTML = "";
 		let elementoCarga = crearElementoCarga();
 		listaMovimientos.appendChild(elementoCarga);
@@ -568,8 +660,8 @@ const popupDatosCliente = (()=>{
 		let pagos,entregas = undefined;
 		let movimientosCargados = [];
 		try {
-			pagos = await getPagosCliente(self.clienteActual.id);
-			entregas = await getEntregasCliente(self.clienteActual.id);
+			pagos = await getPagosCliente(self.clienteActual.id,abortCargaMovimientos.signal);
+			entregas = await getEntregasCliente(self.clienteActual.id,abortCargaMovimientos.signal);
 			pagos.forEach((pago) => {
 				movimientosCargados.push({
 					elemento:crearElementoMovimientoPago(pago),
@@ -580,15 +672,17 @@ const popupDatosCliente = (()=>{
 				if (entrega.estado == "abierta") {
 					return;
 				}
-				const prendasEntrega = await getPrendasInEntrega(entrega.id)
+				const prendasEntrega = await getPrendasInEntrega(entrega.id,abortCargaMovimientos.signal)
 				movimientosCargados.push({
 					elemento:crearElementoMovimientoCompra(entrega,prendasEntrega),
 					fecha:entrega.fecha
 				});
 			}));
 		} catch (err) {
-			listaEntregas.appendChild(crearElementoErr("No se han podido cargar los movimientos: "+err));
-			throw err;
+			if (err.name != "AbortError") {
+				listaEntregas.appendChild(crearElementoErr("No se han podido cargar los movimientos: "+err));
+			}
+			return;
 		} finally {
 			elementoCarga.remove();
 		}
@@ -659,7 +753,7 @@ const popupDatosCliente = (()=>{
 		desc.innerText = 
 			formateadorFecha.format(infoPago.fecha)
 			+" - "
-			+(infoPago.observacion != undefined ? infoPago.observacion : "Sin observacion");
+			+(infoPago.observacion ?? "Sin observacion");
 		divLeft.appendChild(desc);
 
 		const monto = document.createElement("p");
@@ -670,6 +764,9 @@ const popupDatosCliente = (()=>{
 	}
 
 	document.getElementById("DC-nuevaEntrega").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		popupNuevaEntrega.abrir(hashCliente(self.clienteActual));
 		popupNuevaEntrega.popup.addEventListener("close",(event)=>{
 			if (!popupNuevaEntrega.submitted) {
@@ -680,6 +777,9 @@ const popupDatosCliente = (()=>{
 		},{once:true});
 	});
 	document.getElementById("DC-nuevoPago").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		popupRegistrarPago.abrir(hashCliente(self.clienteActual));
 		popupRegistrarPago.popup.addEventListener("close",(event)=>{
 			if (!popupRegistrarPago.submitted) {
@@ -691,8 +791,21 @@ const popupDatosCliente = (()=>{
 		},{once:true});
 	});
 	document.getElementById("DC-whatsapp").addEventListener("click",(event)=>{
+		if (!self.clienteActual.activo) {
+			return;
+		}
 		//qwq
 	});
+	document.getElementById("DC-editar").addEventListener("click",(event)=>{
+		actualizarDatosCliente.abrir(self.clienteActual);
+		actualizarDatosCliente.popup.addEventListener("close",(event)=>{
+			if (!actualizarDatosCliente.submitted) {
+				return;
+			}
+			actualizarDatosCliente.resultado.then(refrescarCliente);
+			self.submitted = true;
+		})
+	})
 
 	return self;
 })();
@@ -705,33 +818,99 @@ const popupDatosPrenda = (()=>{
 		abrir:undefined
 	};
 
-	let id_prendaActual = undefined;
+	let prendaActual = undefined;
 	const titulo = document.getElementById("DP-nombre");
 	const inputTalle = document.getElementById("DP-talle");
 	const inputColor = document.getElementById("DP-color");
 	const inputPrecio = document.getElementById("DP-precio");
 	const inputStock = document.getElementById("DP-stock");
+	const inputActivo = document.getElementById("DP-activo")
 	self.abrir = (infoPrenda)=>{
 		titulo.innerText = infoPrenda.descripcion;
-		inputTalle.value = infoPrenda.talle;
-		inputColor.value = infoPrenda.color;
-		inputPrecio.value = infoPrenda.precio;
-		inputStock.value = infoPrenda.stock;
-		id_prendaActual = infoPrenda.id;
+		inputTalle.value = infoPrenda.talle ?? "";
+		inputColor.value = infoPrenda.color ?? "";
+		inputPrecio.value = infoPrenda.precio ?? 0;
+		inputStock.value = infoPrenda.stock ?? 0;
+		inputActivo.checked = infoPrenda.activo ?? false;
+		prendaActual = infoPrenda;
 		self.submitted = false;
 		self.popup.showModal();
 	};
 	self.popup.addEventListener("close",()=>{
-		id_prendaActual = undefined;
+		prendaActual = undefined;
 	});
 
 	self.formulario.addEventListener("submit",(event)=>{
 		event.preventDefault();
 		let infoForm = new FormData(self.formulario);
-		updatePrenda(id_prendaActual,infoForm);
+		updatePrenda(prendaActual,infoForm);
 		self.submitted = true;
 		self.popup.close();
 	});
+
+	return self;
+})();
+
+const popupMapaClientes = (()=>{
+	let self = {
+		popup:document.getElementById("popupMapaClientes"),
+		elementoMapa:document.getElementById("MC-mapaLeaflet"),
+		abrir:undefined,
+		mapa:undefined
+	};
+	self.mapa = new L.LeafletMap(self.elementoMapa).setView([-34.6037, -58.3816], 13);
+	new L.TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		maxZoom: 19,
+		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+	}).addTo(self.mapa);
+
+	self.abrir = () => {
+		self.popup.showModal();
+		cargarClientes();
+	};
+
+	self.marcadoresActuales = [];
+	const divErr = document.getElementById("MC-err");
+	let abortCargaClientes = undefined;
+	async function cargarClientes() {
+		abortCargaClientes = manejarAbort(abortCargaClientes);
+
+		self.marcadoresActuales.forEach((marcador)=>{
+			marcador.remove();
+		});
+		self.marcadoresActuales = [];
+		divErr.innerHTML = "";
+		let elementoCarga = crearElementoCarga();
+		divErr.appendChild(elementoCarga);
+		let clientes = undefined;
+		try {
+			clientes = await getClientes(abortCargaClientes.signal);
+		} catch (err) {
+			if (err.name != "AbortError") {
+				divErr.appendChild(crearElementoErr("No se han podido cargar los clientes: "+err));
+			}
+			return;
+		} finally {
+			elementoCarga.remove();
+		}
+
+		clientes.forEach((cliente)=>{
+			if (cliente.longitud == undefined || cliente.latitud == undefined) {
+				return;
+			}
+			let coordenadas = [cliente.latitud,cliente.longitud];
+			let marcador = new L.Marker(coordenadas);
+			marcador.addTo(self.mapa)
+			marcador.bindPopup(cliente.nombre+", "+cliente.direccion)
+			self.marcadoresActuales.push(marcador);
+		});
+		if (self.marcadoresActuales.length <= 0) {
+			divErr.appendChild(crearElementoErr("No hay clientes con ubicacion para mostrar"));
+		} else {
+			self.mapa.setView(self.marcadoresActuales[0].getLatLng(),10)
+			self.marcadoresActuales[0].openPopup();
+		}
+	}
 
 	return self;
 })();

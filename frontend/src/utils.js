@@ -6,11 +6,14 @@ function hashCliente(cliente) {
 	return cliente.nombre+" ("+cliente.id+")";
 }
 
-async function generarListaOpcionesClientes(elementoDatalist) {
-	const clientes = await getClientes();
+async function generarListaOpcionesClientes(elementoDatalist,abortSignal) {
+	const clientes = await getClientes(abortSignal);
 	const lookupClientes = {};
 	elementoDatalist.innerHTML = "";
 	clientes.forEach((cliente)=>{
+		if (!cliente.activo) {
+			return;
+		}
 		let opcion = document.createElement("option");
 		opcion.setAttribute("value",hashCliente(cliente));
 		elementoDatalist.appendChild(opcion);
@@ -28,6 +31,10 @@ function crearDivInfoPrenda(prenda) {
 	const divInfo = document.createElement("div");
 	const titulo = document.createElement("h4");
 	titulo.innerText = prenda.descripcion;
+	if (!prenda.activo) {
+		titulo.innerText += " (inactivo)";
+		titulo.style.color = "red";
+	}
 	divInfo.appendChild(titulo);
 	const desc = document.createElement("p");
 	desc.innerText = "Talle "+prenda.talle+" - "+prenda.color;
@@ -49,6 +56,22 @@ function crearElementoErr(errMsg) {
 	return elemento;
 }
 
+function crearIconoCliente(cliente) {
+	const icono = document.createElement("div");
+	icono.classList.add("iconoPerfil");
+	
+	let nombres = cliente.nombre.split(" ");
+	const inicial = document.createElement("p");
+	nombres.forEach((nombre,index)=>{
+		if (index+1 > 2) { //solo los primeros dos nombres
+			return;
+		}
+		inicial.innerText += nombre[0].toUpperCase();
+	});
+	icono.appendChild(inicial);
+	return icono;
+}
+
 const paginas = [
 	"paginaInicio",
 	"paginaClientes",
@@ -60,4 +83,11 @@ function abrirPagina(id) {
 		const elemento = document.getElementById(pag);
 		elemento.hidden = id != pag;
 	});
+}
+
+function manejarAbort(controller) {
+	if (controller) {
+		controller.abort("Cancelado");
+	}
+	return new AbortController();
 }
