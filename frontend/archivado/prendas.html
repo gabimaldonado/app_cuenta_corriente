@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prendas - Cuentas Corrientes</title>
+
+    <!----------------------estilos minimos que agrega tadeo. Si aun no esta listo lo va ignorar el navegador ------------>
+    <link rel="stylesheet" href="css/estilos.css">
+    <!------ estilo que hice, se borran cuando estilos.css este listo para adjuntarlo al archivo-->
+        
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    color: #1c1c1c;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  h1 { 
+    font-size: 1.4rem; 
+    margin: 8px 0; 
+  }
+  input { 
+    width: 100%; 
+    box-sizing: border-box; 
+    padding: 10px; 
+    font: inherit; 
+    border: 1.5px solid #8a8a8a; 
+    border-radius: 8px; 
+  }
+  label { 
+    display: block; 
+    margin-top: 12px; 
+    font-weight: 600; 
+  }
+  button { 
+    font: inherit; 
+    padding: 10px 14px; 
+    border-radius: 8px; 
+    border: 1.5px solid #1c1c1c; 
+    background: #fff; 
+    cursor: pointer; 
+  }
+  .principal { 
+    background: #1f4fa8; 
+    border-color: #1f4fa8; 
+    color: #fff; 
+    font-weight: 600; 
+  }
+  .peligro { 
+    color: #993c00; 
+    border-color: #993c00; 
+  }
+  .barra { 
+    display: flex; 
+    gap: 8px; 
+    margin-bottom: 12px; 
+  }
+  .filtros { 
+    display: flex; 
+    gap: 8px; 
+    margin-bottom: 12px; 
+    flex-wrap: wrap; 
+  }
+  .filtros button { 
+    border-radius: 999px; 
+    padding: 6px 14px; 
+  }
+  .filtros button.activo { 
+    background: #1c1c1c; 
+    color: #fff; 
+  }
+  .grilla { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 12px; 
+  }
+  .tarjeta { 
+    text-align: left; 
+    border: 1.5px solid #d0d0d0; 
+    border-radius: 12px; 
+    padding: 10px; 
+    background: #fff; 
+  }
+  .foto { 
+    height: 80px; 
+    background: #ececec; 
+    border-radius: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #777; 
+    overflow: hidden; 
+    margin-bottom: 8px; 
+  }
+  .foto img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+  }
+  .tarjeta strong { 
+    display: block; 
+  }
+  .tarjeta small { 
+    display: block; 
+    color: #666; 
+  }
+  .pie { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-top: 6px; 
+  }
+  .sin-stock { 
+    color: #993c00; 
+    font-weight: 700; 
+  }
+  .error { 
+    color: #993c00; 
+    min-height: 1.2em; 
+  }
+  .acciones { 
+    display: flex; 
+    gap: 8px; 
+    margin-top: 16px; 
+    flex-wrap: wrap; 
+  }
+  [hidden] { 
+    display: none !important; 
+  }
+</style>  
+</head>
+<body>
+    <header>
+        <a href="index.html"> Menú</a>
+        <span>Hola, <span id="nombre-usuario"></span> <button id="btnSalir">Salir</button></span>
+    </header>
+
+    <main>
+        <h1>Prendas</h1>
+
+        <!----Vista N°1 catalogo de buscador y filtros-->
+        <section id="vistaLista">
+            <div class="barra">
+              <input type="search" placeholder="Buscar por nombre, talle o color">
+              <button id="btnNueva" class="principal">Nueva Prenda</button>
+            </div>
+            <div class="filtros" id="filtros">
+                <button type="button" data-stock="" class="activo">Todas</button>
+                <button type="button" data-stock="true">Con Stock</button>
+                <button type="button" data-stock="false">Sin Stock</button>
+            </div>
+            <p id="mensajeLista" class="error"></p>
+            <div id="grilla" class="grilla"></div>
+        </section>
+
+        <!--Vista N°2 formulario de alta y de edición-->
+        <section id="vistaForm" hidden>
+            <h2 id="tituloForm">Nueva Prenda</h2>
+            <form id="formPrenda" novalidate>
+                <label for="descripcion">Descripcion </label>
+                <input id="descripcion" maxlength="100" placeholder="Ej: Jean recto">
+
+                <label for="talle">Talle</label>
+                <input type="text" name="talle" id="talle" required>
+
+                <label for="color">Color</label>
+                <input type="text" name="color" id="color" required>
+
+                <label for="precio">Precio</label>
+                <input type="text" name="precio" id="precio" required>
+
+                <label for="stock">Stock</label>
+                <input type="number" name="stock" id="stock" min="0" required>
+
+                <label for="foto">Foto (URL)</label>
+                <input type="url" name="foto" id="foto">
+
+                <p id="errorForm" class="error" role="alert"></p>
+
+                <div class="acciones">
+                    <button type="submit" class="principal">Guardar</button>
+                    <button type="button" id="btnCancelar">Cancelar</button>
+                    <button type="button" id="btnBaja" class="peligro">Dar de baja</button>
+                </div>
+            </form>
+        </section>
+      </main>
+ <!---hacer lo mismo que de clientes-->
+      <scrip src="sesion.js"></scrip>
+      <scrip src="prendas.js"></scrip>
+    </body>
+  </html>

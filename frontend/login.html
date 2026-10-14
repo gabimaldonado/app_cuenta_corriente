@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingresar · Cuenta Corriente</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Ingresar · Cuenta Corriente</title>
+	<link rel="stylesheet" href="assets/estilosCompartidos.css">
+	<link rel="stylesheet" href="assets/estilosLogin.css">
 </head>
 <body>
-  <h1>Cuenta Corriente</h1>
-  <h2>Ingresar</h2>
+	<header>
+		<h1>Cuenta Corriente</h1>
+	</header>
+	<main>
+		<h2>Ingresar</h2>
 
-  <form id="formLogin">
-    <input type="email"    id="campoEmail"    placeholder="Email"      required>
-    <input type="password" id="campoPassword" placeholder="Contraseña" required>
-    <button type="submit">Entrar</button>
-  </form>
+		<form id="formLogin">
+			<label for="campoEmail">Email</label>
+			<input type="email"    id="campoEmail"    placeholder="Email"      required>
+			<label for="campoPassword">Contraseña</label>
+			<input type="password" id="campoPassword" placeholder="Contraseña" required>
+			<button type="submit" class="botonConfirmatorio" id="botonSubmit" >Entrar</button>
+		</form>
 
-  <!-- acá se muestran los errores -->
-  <p id="mensaje"></p>
-
-  <script src="login.js"></script>
+		<!-- acá se muestran los errores -->
+		<p id="mensaje"></p>
+	</main> 
+	<script src="login.js"></script>
 </body>
 </html>
