@@ -8,7 +8,8 @@ TP1 — Aplicaciones Móviles y Cloud Computing
 
 App web para una vendedora de ropa que trabaja con **cuenta corriente**: las clientas se llevan prendas a probar, después confirman cuáles compran y cuáles devuelven, y pagan en partes. La app lleva el registro de clientas, prendas, entregas, pagos y el **saldo** de cada una, y permite mandarle el resumen por WhatsApp.
 
-- **URL pública:** _(a completar cuando esté desplegada)_
+- **URL pública:** https://reliable-spirit-production-e065.up.railway.app
+- **API (ejemplo):** https://reliable-spirit-production-e065.up.railway.app/api/estado.php
 - **Usuario de prueba:**
   - Email: `admin@cuentacorriente.com`
   - Contraseña: `admin123`
@@ -99,19 +100,19 @@ _(Los demás integrantes agregan acá sus endpoints con este mismo formato.)_
 
 ## 4. Variables de entorno
 
-La configuración se lee con `getenv()` en `api/config.php`. En el código **no hay ninguna contraseña real**: los valores de producción se cargan solo en el panel del proveedor de hosting. Si una variable no existe, se usa el valor local de XAMPP.
+La configuración se lee con `getenv()` en `api/config.php`. En el código **no hay ninguna contraseña ni clave real**: los valores de producción se cargan solo en el panel de Railway (pestaña *Variables* del servicio de la app). Si una variable no existe, se usa el valor local de XAMPP, por eso en local no hace falta configurar nada.
 
-| Variable | Para qué sirve | Valor por defecto (local) |
-|---|---|---|
-| `DB_HOST` | Servidor de la base de datos | `localhost` |
-| `DB_PORT` | Puerto de MySQL | `3306` |
-| `DB_NAME` | Nombre de la base | `cuenta_corriente` |
-| `DB_USER` | Usuario de MySQL | `root` |
-| `DB_PASS` | Contraseña de MySQL | _(vacía)_ |
-| `CORS_ORIGEN` | Única dirección desde la que el navegador puede llamar a la API | `http://localhost:5500` |
-| `APP_ENV` | Con el valor `produccion` se apaga `display_errors`, para no mostrar errores internos | `local` |
+| Variable | Para qué sirve | En local (XAMPP) | En Railway |
+|---|---|---|---|
+| `DB_HOST` | Servidor de la base de datos | `localhost` | Referencia al servicio MySQL: `${{MySQL.MYSQLHOST}}` |
+| `DB_PORT` | Puerto de MySQL | `3306` | `${{MySQL.MYSQLPORT}}` |
+| `DB_NAME` | Nombre de la base | `cuenta_corriente` | `cuenta_corriente` (la crea `schema.sql`) |
+| `DB_USER` | Usuario de MySQL | `root` | `${{MySQL.MYSQLUSER}}` |
+| `DB_PASS` | Contraseña de MySQL | _(vacía)_ | `${{MySQL.MYSQLPASSWORD}}` |
+| `CORS_ORIGEN` | Única dirección desde la que el navegador puede llamar a la API (nunca `*`) | `http://localhost:5500` | La URL pública de la app |
+| `APP_ENV` | Con el valor `produccion` se apaga `display_errors`: los errores van al log y no se muestran al visitante | `local` | `produccion` |
 
-_(Si se usa el aviso por email, agregar `RESEND_API_KEY`.)_
+Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los datos de su propia base MySQL, así la contraseña nunca se copia a mano ni aparece en el código.
 
 ---
 
@@ -123,7 +124,28 @@ _(A completar: geocodificación con Open-Meteo y mapa con Leaflet + OpenStreetMa
 
 ## 6. Despliegue
 
-_(A completar cuando la app esté en la nube: proveedor, por qué se eligió y pasos para volver a desplegar.)_
+**Proveedor:** [Railway](https://railway.com), una plataforma **PaaS** (plataforma como servicio).
+
+**Por qué PaaS y por qué Railway:** con PaaS solo entregamos nuestro código y nuestros datos; el proveedor se encarga del servidor, el sistema operativo, el certificado HTTPS y la red. Railway, además, permite tener la **app y la base MySQL en el mismo proyecto** (comunicadas por una red privada), maneja **variables de entorno** desde su panel y se conecta con GitHub. Lo recomendó la cátedra y no bloquea a clientes que no son navegadores, algo necesario para la app Android del TP N.º 2.
+
+**Cómo está armado**
+
+- **Servicio de la app:** se construye con el `Dockerfile` de la raíz, que arma un servidor igual a XAMPP (imagen `php:8.2-apache` + extensión `pdo_mysql`). La última línea (`CMD`) deja activo un solo módulo de trabajo de Apache (`mpm_prefork`, el que necesita PHP); sin ella, en Railway Apache no arrancaba (*More than one MPM loaded*).
+- **`index.php` (raíz):** redirige a `frontend/`, así la URL pública lleva directo a la app (y de ahí al login).
+- **Servicio MySQL:** base de Railway con su propio volumen de datos. Solo se accede por la red privada del proyecto; el acceso público se usó una sola vez para cargar los scripts y después se cerró.
+- **Frontend y API en el mismo dominio**, por eso las direcciones a la API son relativas (`../api/...`) y no hay problemas de CORS.
+
+**Pasos para volver a desplegar**
+
+1. **Código:** el servicio de la app está conectado a la rama `main` de GitHub. Cada vez que se une algo a `main`, Railway vuelve a construir y desplegar solo (tarda un par de minutos). Si algo falla, el detalle está en *Deployments → Deploy Logs*.
+2. **Desde cero** (proyecto nuevo):
+   1. En Railway: *New Project → Deploy from GitHub repo* → este repositorio.
+   2. En el mismo proyecto: *+ Add → Database → MySQL*.
+   3. En el servicio de la app → *Variables* → cargar las de la sección 4.
+   4. *Settings → Networking → Generate Domain* para obtener la dirección pública con HTTPS.
+   5. Crear las tablas: habilitar temporalmente el acceso público de MySQL, conectarse con un cliente (por ejemplo HeidiSQL) usando los datos de `MYSQL_PUBLIC_URL`, ejecutar `sql/schema.sql` y después `sql/datos_prueba.sql`, y **volver a cerrar** el acceso público.
+   6. Probar `/api/estado.php`: tiene que responder `{"api":"ok","base":"conectada",...}`.
+3. **Cambios en la base:** si se agrega una columna o tabla, además de actualizar `schema.sql` hay que ejecutar el `ALTER TABLE` en la base de Railway (no se actualiza sola).
 
 ---
 
@@ -131,6 +153,8 @@ _(A completar cuando la app esté en la nube: proveedor, por qué se eligió y p
 - **Una entrega abierta no se puede editar ni cancelar desde la API:** solo se crea y se confirma.
 - **La confirmación es de todo o nada:** se decide el destino de todas las prendas de la entrega a la vez.
 - **Las entregas abiertas no vencen:** pueden quedar abiertas indefinidamente.
+- **Plan de Railway:** usamos la prueba gratuita (30 días o US$5 de crédito). Para mantener el despliegue hasta el TP N.º 2 hay que pasar al plan Hobby.
+- **Cambios en la base de la nube:** las modificaciones de `schema.sql` no se aplican solas en Railway; hay que ejecutarlas a mano.
 
 _(A completar al final, con lo que quedó sin hacer o funciona con alguna restricción.)_
 
