@@ -6,7 +6,7 @@
 
 require_once __DIR__ . "/cors.php";      // encabezados CORS y preflight OPTIONS
 require_once __DIR__ . "/conexion.php";  // crea $conexion (PDO)
-// require_once __DIR__ . "/auth.php";   // TODO: descomentar cuando Gaby lo suba (valida el token)
+require_once __DIR__ . "/auth.php";   // Valida el token, sin token responde 401.
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     http_response_code(500);
@@ -18,9 +18,12 @@ header("Content-Type: application/json; charset=utf-8");
 
 // ---------- Funciones auxiliares -------
 // Envía la respuesta en JSON con el código de estado y corta la ejecución
-function responder($codigo, $datos) {
+// 204 sin contenido no lleva cuerpo.
+function responder($codigo, $datos = null) {
     http_response_code($codigo);
-    echo json_encode($datos, JSON_UNESCAPED_UNICODE);
+    if ($codigo !==204) {
+        echo json_encode($datos, JSON_UNESCAPED_UNICODE);
+    }
     exit();
 }
 
