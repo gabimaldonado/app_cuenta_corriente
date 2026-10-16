@@ -8,7 +8,7 @@
 require_once __DIR__ . "/cors.php";       //encabezados CORDS
 require_once __DIR__ . "/conexion.php";  //crea la conexion (PDO)
 require_once __DIR__ . "/auth.php";     //valida el token: sin el token va responder 401
-require_once __DIR__ . "/servicio.php"; //geocodificación de la ciudad (servicio externo)
+require_once __DIR__ . "/servicios.php"; //geocodificación de la ciudad (servicio externo)
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     $conexion = null;
