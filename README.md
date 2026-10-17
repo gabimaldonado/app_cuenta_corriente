@@ -162,8 +162,6 @@ _(A completar al final, con lo que quedó sin hacer o funciona con alguna restri
 
 ## Decisiones de cada módulo
 
-- **Pantallas.** En «Inicio», el botón «Nueva Entrega» abre un formulario donde se elige la clienta, se buscan y agregan prendas del catálogo (solo las que tienen stock) y se ve el total a prueba; al guardar se llama a `POST entregas.php`. En cada entrega abierta, «Confirmar >» abre la lista de prendas con «Se queda / Devuelve» y el importe que se suma al saldo; al confirmar se llama a `PUT confirmar_entrega.php`. Si la API responde con un error (por ejemplo, una prenda sin stock o una entrega ya cerrada), el mensaje se muestra en rojo dentro del popup y este no se cierra. Si el token venció, se vuelve a la pantalla de login.
-
 ### Base, login y seguridad
 
 - **Las contraseñas nunca se guardan en texto plano.** Se guardan con `password_hash()`, que las convierte en un texto irreversible. En el login se comparan con `password_verify()`. Si alguien llegara a ver la base, no podría saber las contraseñas.
@@ -177,13 +175,14 @@ _(A completar al final, con lo que quedó sin hacer o funciona con alguna restri
 ### Entregas y confirmación de compra
 El contrato completo de estos endpoints está en docs/contrato_entregas.md.
 
--- **Las prendas a prueba no suman al saldo.** Una prenda a prueba todavía no es una compra: la clienta puede devolverla. Por eso crear una entrega solo descuenta el stock y deja cada ítem en en_prueba, y no toca ningún saldo. Recién confirmar_entrega.php pasa un ítem a comprada, y en ese momento empieza a contar. Como el saldo se calcula sumando lo comprado y restando lo pagado, la deuda de una clienta solo puede subir por una decisión explícita de compra.
--- **Transacción en los dos endpoints.** Crear una entrega son varios pasos (insertar la entrega, insertar cada ítem y descontar el stock de cada prenda), y confirmarla también (cambiar el estado de cada ítem, devolver stock y cerrar la entrega). Si uno fallara a la mitad, la base quedaría inconsistente: una entrega sin todas sus prendas, o stock descontado de algo que nunca se entregó. Con beginTransaction, commit y rollBack de PDO se guarda todo junto o no se guarda nada. Por ejemplo, una entrega con una prenda válida y otra inexistente responde 404 y el stock de la válida queda intacto.
--- **El precio se guarda en cada ítem.** entrega_items.precio_unitario guarda el precio que tenía la prenda el día de la entrega. Si el catálogo cambia después, lo que la clienta debe no se modifica, porque el saldo se calcula con ese precio y no con el actual de productos.
--- **El stock se revisa antes de guardar.** Si una prenda no tiene stock, la API responde 400 y no queda nada guardado. Al devolver una prenda, su unidad vuelve al stock.
--- **Una entrega cerrada responde 409, no 400.** El pedido está bien armado; lo que lo impide es el estado actual de la entrega. Las validaciones de confirmar_entrega.php se hacen en este orden: cuerpo del pedido (400), entrega inexistente (404), entrega ya cerrada (409) e ítem ajeno a la entrega (400).
--- **Consultas preparadas y errores controlados.** Todos los datos que llegan del cliente se usan como parámetros de PDO. Si la base falla, la respuesta es un 500 con un mensaje genérico y el detalle va a error_log().
--- **Pantallas:** [COMPLETAR cuando estén conectadas: cómo se usan «Nueva entrega» y «Confirmar compra» y cómo se muestran al usuario los errores de la API.]
+- **Las prendas a prueba no suman al saldo.** Una prenda a prueba todavía no es una compra: la clienta puede devolverla. Por eso crear una entrega solo descuenta el stock y deja cada ítem en en_prueba, y no toca ningún saldo. Recién confirmar_entrega.php pasa un ítem a comprada, y en ese momento empieza a contar. Como el saldo se calcula sumando lo comprado y restando lo pagado, la deuda de una clienta solo puede subir por una decisión explícita de compra.
+- **Transacción en los dos endpoints.** Crear una entrega son varios pasos (insertar la entrega, insertar cada ítem y descontar el stock de cada prenda), y confirmarla también (cambiar el estado de cada ítem, devolver stock y cerrar la entrega). Si uno fallara a la mitad, la base quedaría inconsistente: una entrega sin todas sus prendas, o stock descontado de algo que nunca se entregó. Con beginTransaction, commit y rollBack de PDO se guarda todo junto o no se guarda nada. Por ejemplo, una entrega con una prenda válida y otra inexistente responde 404 y el stock de la válida queda intacto.
+- **El precio se guarda en cada ítem.** entrega_items.precio_unitario guarda el precio que tenía la prenda el día de la entrega. Si el catálogo cambia después, lo que la clienta debe no se modifica, porque el saldo se calcula con ese precio y no con el actual de productos.
+- **El stock se revisa antes de guardar.** Si una prenda no tiene stock, la API responde 400 y no queda nada guardado. Al devolver una prenda, su unidad vuelve al stock.
+- **Una entrega cerrada responde 409, no 400.** El pedido está bien armado; lo que lo impide es el estado actual de la entrega. Las validaciones de confirmar_entrega.php se hacen en este orden: cuerpo del pedido (400), entrega inexistente (404), entrega ya cerrada (409) e ítem ajeno a la entrega (400).
+- **Consultas preparadas y errores controlados.** Todos los datos que llegan del cliente se usan como parámetros de PDO. Si la base falla, la respuesta es un 500 con un mensaje genérico y el detalle va a error_log().
+- **Pantallas.** En «Inicio», el botón «Nueva Entrega» abre un formulario donde se elige la clienta, se buscan y agregan prendas del catálogo (solo las que tienen stock) y se ve el total a prueba; al guardar se llama a `POST entregas.php`. En cada entrega abierta, «Confirmar >» abre la lista de prendas con «Se queda / Devuelve» y el importe que se suma al saldo; al confirmar se llama a `PUT confirmar_entrega.php`. Si la API responde con un error (por ejemplo, una prenda sin stock o una entrega ya cerrada), el mensaje se muestra en rojo dentro del popup y este no se cierra. Si el token venció, se vuelve a la pantalla de login.
+
 
 ### Diseño general del sitio
 
