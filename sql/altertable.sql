@@ -1,0 +1,4 @@
+USE cuenta_corriente;
+ALTER TABLE productos
+  ADD COLUMN foto   VARCHAR(255) NULL,
+  ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1;

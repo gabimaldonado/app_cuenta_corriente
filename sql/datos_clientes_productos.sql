@@ -1,7 +1,5 @@
---- Datos de prueba: 10 clientes y 20 prendas ---
---- Ejecutar despues de crear las tablas --- 
-
-INSERT INTO clientes (nombre, telefono, dni, direccion, notas, activo) VALUES
+----Datos de prueba-------
+INSERT INTO clientes (nombre, telefono, dni, direccion, ciudad, notas, activo) VALUES
 ('María Gómez',      '5491145678901', '30123456', 'Av. Corrientes 1234, CABA',     'Prefiere que la llamen por la tarde', 1),
 ('Lucía Fernández',  '5491156789012', '32456789', 'Calle Mitre 456, Quilmes',      NULL, 1),
 ('Carolina Pérez',   '5491167890123', '28345678', NULL,                            'Talle M en todo', 1),

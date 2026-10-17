@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes Cuenta Corriente</title>
+
+    <!---Estilos comunes de Tadeo. Si el archivo todavia no existe, el navegador lo va ignorar-. --->
+    <link rel="stylesheet" href="estilos.css">
+    <!----Estilos minimos temporal hasta uq eeste listo estilos.css, luego se puede borrar ese bloque-->
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            color: #1c1c1c;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        h1 {
+            font-size: 1.4rem;
+            margin: 8px 0;
+        }
+        input, textarea{
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            font: inherit;
+            border: 1.5px solid #8a8a8a;
+            border-radius: 8px;
+        }
+        label{
+            display: block;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+        button{
+            font: inherit;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1.5px solid #1c1c1c;
+            background: #fff;
+            cursor: pointer;
+        }
+        .principal {
+            background: #1f4fa8;
+            border-color: #1f4fa8;
+            color: #fff;
+            font-weight: 600;
+        }
+        .peligro {
+            color: #993c00;
+            border-color: #993c00;
+        }
+        .barra {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;  
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            border-bottom: 1px solid #ddd;
+        }
+        .fila {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            width: 100%;
+            text-align: left;
+            border: 0;
+            border-radius: 0;
+            background: none;
+            padding: 12px 4px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e4e4e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .datos small {
+            display: block;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .error {
+            color: #993c00;
+            min-height: 1.2em;
+        }
+        .acciones {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+   <header>
+    <a href="index.html"> Menú</a>
+    <span>Hola, <span id="nombreUsuario"></span> <button id="btnSalir">Salir</button></span>
+   </header>
+
+    <main>
+     <h1>Clientes</h1>
+
+     <!-- Vistas N°1 listado de buscador-->
+     <section id="vistaLista">
+        <div class="barra">
+            <input id="buscador" type="search" placeholder="Buscar por nombre o DNI">
+            <button id="btbNueva" class="principal">+ Nueva</button>
+        </div>
+        <p id="mensajeLista" class="error"></p>
+        <ul id="lista"></ul>
+     </section>
+
+     <!-----Vistas N°2 Formulario de alta edición, se muestra en lugar del listado-->
+     <section id="vistaForm" hidden>
+       <h2  id="tituloForm">Nueva clienta</h2>
+       <form id="formCliente" novalidate>
+         <label for="nombre">Nombre y Apellido *</label>
+         <input id="nombre" maxlength="100">
+         
+         <label for="telefono">Telefono con código de pais *</label>
+         <input id="telefono" inputmode="tel" placeholder="Ej 5491122334455">
+
+         <label for="dni">DNI (opcional)</label>
+         <input id="dni" inputmode="numeric" placeholder="30123456">
+
+         <label for="direccion">Dirección (opcional)</label>
+         <input id="direccion" maxlength="150">
+
+         <label for="notas">Notas (opcional)</label>
+         <textarea id="notas" rows="3" maxlength="255"></textarea>
+
+         <p id="errorForm" class="error" role="alert"></p>
+
+         <div class="acciones">
+            <button type="submit" class="principal">Guardar</button>
+            <button type="button" id="btnCancelar">Cancelar</button>
+            <button type="button" id="btnBaja" class="peligro" hidden>Dar de baja</button>
+         </div>
+        </form>
+     </section>
+    </main>
+
+    <!-----Primero defino la URL_Api, token e irAlgon, despues esta pantalla-->
+    <scrip src="sesion.js"></scrip>
+    <scrip src="clientes.js"></scrip>
+</body>
+</html>

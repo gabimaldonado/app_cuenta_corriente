@@ -1,6 +1,6 @@
 <?php
-//servicio.php
-//llamadas a servicios externos hecjas desde el backend.
+//servicios.php
+//llamadas a servicios externos hechas desde el backend.
 // Hoy: geocodificación de ciudades con la api de Open-Meteo (gratis y sin clave para uso no comercial)
 // se incluye con require_once desde clientes.php.
 //Por que se llama desde el back: el resultado latitud y longitud se guarda en la base. 
