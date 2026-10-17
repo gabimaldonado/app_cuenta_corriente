@@ -6,7 +6,7 @@
 
 require_once __DIR__ . "/cors.php";      // encabezados CORS y preflight OPTIONS
 require_once __DIR__ . "/conexion.php";  // crea $conexion (PDO)
-require_once __DIR__ . "/auth.php";   // Valida el token, sin token responde 401.
+require_once __DIR__ . "/auth.php";      // Valida el token, sin token responde 401.
 
 if (!isset($conexion) || !($conexion instanceof PDO)) {
     http_response_code(500);
@@ -16,19 +16,19 @@ if (!isset($conexion) || !($conexion instanceof PDO)) {
 
 header("Content-Type: application/json; charset=utf-8");
 
-// ---------- Funciones auxiliares -------
+// ---------- Funciones auxiliares (con tipado para evitar avisos de VS Code) -------
+
 // Envía la respuesta en JSON con el código de estado y corta la ejecución
-// 204 sin contenido no lleva cuerpo.
-function responder($codigo, $datos = null) {
+function responder(int $codigo, mixed $datos = null): void {
     http_response_code($codigo);
-    if ($codigo !==204) {
+    if ($codigo !== 204) {
         echo json_encode($datos, JSON_UNESCAPED_UNICODE);
     }
     exit();
 }
 
-//lee el JSON que mando el frontend en el body (POST y PUT)-.
-function leerCuerpo() {
+// Lee el JSON que mandó el frontend en el body (POST y PUT)
+function leerCuerpo(): array {
     $datos = json_decode(file_get_contents("php://input"), true);
     if (!is_array($datos)) {
         responder(400, ["error" => "El cuerpo del pedido debe ser un JSON válido"]);
@@ -36,9 +36,8 @@ function leerCuerpo() {
     return $datos;
 }
 
-//PDO devuelve los numeros de MySQL como texto ("45000.00"). Los convertimos
-//para que el JSON tenga numeros de verdad, como dice el contrato.
-function formatearProducto($fila) {
+// Convierte tipos de MySQL a tipos numéricos reales
+function formatearProducto(array $fila): array {
     $fila["id"]     = (int) $fila["id"];
     $fila["precio"] = (float) $fila["precio"];
     $fila["stock"]  = (int) $fila["stock"];
@@ -46,27 +45,27 @@ function formatearProducto($fila) {
     return $fila;
 }
 
-// Busca una prenda activa por id; devuelve la fila o false si no existe-.
-function buscarProducto($conexion, $id) {
+// Busca una prenda activa por id (usa la tabla prendas)
+function buscarProducto(PDO $conexion, int $id): array|false {
     $stmt = $conexion->prepare(
         "SELECT id, descripcion, talle, color, precio, stock, foto, activo
-         FROM productos WHERE id = :id AND activo = 1"
+         FROM prendas WHERE id = :id AND activo = 1"
     );
     $stmt->execute([":id" => $id]);
     $fila = $stmt->fetch(PDO::FETCH_ASSOC);
     return $fila ? formatearProducto($fila) : false;
 }
 
-//Obtiene el id de la URL (?id=) y verifica que sea un numero
-function obtenerId() {
+// Obtiene el id de la URL (?id=) y verifica que sea un número
+function obtenerId(): int {
     if (!isset($_GET["id"]) || !ctype_digit($_GET["id"])) {
         responder(400, ["error" => "Falta el id o no es válido"]);
     }
     return (int) $_GET["id"];
 }
 
-//Valida los datos de una prenda. Si algo esta mal, responde 400 y corta.
-function validarProducto($datos) {
+// Valida los datos de una prenda
+function validarProducto(array $datos): array {
     $descripcion = trim($datos["descripcion"] ?? "");
     $talle       = trim($datos["talle"] ?? "");
     $color       = trim($datos["color"] ?? "");
@@ -75,17 +74,14 @@ function validarProducto($datos) {
     if ($descripcion === "" || $talle === "" || $color === "") {
         responder(400, ["error" => "La descripción, el talle y el color son obligatorios"]);
     }
-    //Largos maximos: son los de las columnas. Si no, MySQL fallaria con un error.
     if (mb_strlen($descripcion) > 100 || mb_strlen($talle) > 10 ||
         mb_strlen($color) > 30 || mb_strlen($foto) > 255) {
         responder(400, ["error" => "Algún campo supera el largo permitido"]);
     }
 
-    //is_numeric acepta 45000 y "45000.50", pero rechaza texto, vacio y null.
     if (!isset($datos["precio"]) || !is_numeric($datos["precio"]) || $datos["precio"] < 0) {
         responder(400, ["error" => "El precio debe ser un número mayor o igual a 0"]);
     }
-    //el stock tiene que ser un entero: FILTER_VALIDATE_INT devuelve false si no lo es.
     $stock = isset($datos["stock"]) ? filter_var($datos["stock"], FILTER_VALIDATE_INT) : false;
     if ($stock === false || $stock < 0) {
         responder(400, ["error" => "El stock debe ser un entero mayor o igual a 0"]);
@@ -101,7 +97,7 @@ function validarProducto($datos) {
     ];
 }
 
-//---------Logica principal-------
+//--------- Lógica principal -------
 
 $metodo = $_SERVER["REQUEST_METHOD"];
 
@@ -109,7 +105,7 @@ try {
     switch ($metodo) {
 
         case "GET":
-            //GET ?id=1 -> una prenda
+            // GET ?id=1 -> una prenda
             if (isset($_GET["id"])) {
                 $producto = buscarProducto($conexion, obtenerId());
                 if (!$producto) {
@@ -118,12 +114,11 @@ try {
                 responder(200, $producto);
             }
 
-            //Listado. Los filtros se van sumando al WHERE y se pueden combinar.
+            // Listado con filtros
             $sql = "SELECT id, descripcion, talle, color, precio, stock, foto, activo
-                    FROM productos WHERE activo = 1";
+                    FROM prendas WHERE activo = 1";
             $params = [];
 
-            //buscar=texto -> busca en la descripción, un talle o color.
             if (isset($_GET["buscar"]) && trim($_GET["buscar"]) !== "") {
                 $texto = "%" . trim($_GET["buscar"]) . "%";
                 $sql .= " AND (descripcion LIKE :b1 OR talle LIKE :b2 OR color LIKE :b3)";
@@ -132,7 +127,6 @@ try {
                 $params[":b3"] = $texto;
             }
 
-            // ?stock=con (stock > 0) o ?stock=sin (stock = 0)
             if (isset($_GET["stock"]) && $_GET["stock"] !== "") {
                 if ($_GET["stock"] === "con") {
                     $sql .= " AND stock > 0";
@@ -153,7 +147,7 @@ try {
             $d = validarProducto(leerCuerpo());
 
             $stmt = $conexion->prepare(
-                "INSERT INTO productos (descripcion, talle, color, precio, stock, foto)
+                "INSERT INTO prendas (descripcion, talle, color, precio, stock, foto)
                  VALUES (:descripcion, :talle, :color, :precio, :stock, :foto)"
             );
             $stmt->execute([
@@ -164,7 +158,7 @@ try {
                 ":stock"       => $d["stock"],
                 ":foto"        => $d["foto"],
             ]);
-            responder(201, buscarProducto($conexion, $conexion->lastInsertId()));
+            responder(201, buscarProducto($conexion, (int)$conexion->lastInsertId()));
             break;
 
         case "PUT":
@@ -175,7 +169,7 @@ try {
             $d = validarProducto(leerCuerpo());
 
             $stmt = $conexion->prepare(
-                "UPDATE productos
+                "UPDATE prendas
                  SET descripcion = :descripcion, talle = :talle, color = :color,
                      precio = :precio, stock = :stock, foto = :foto
                  WHERE id = :id"
@@ -197,9 +191,7 @@ try {
             if (!buscarProducto($conexion, $id)) {
                 responder(404, ["error" => "Prenda no encontrada"]);
             }
-            //Borrado Logico: la prenda puede estar en entregas ya registradas
-            //(entrega_items), asi que no se elimina la fila, solo se oculta.
-            $stmt = $conexion->prepare("UPDATE productos SET activo = 0 WHERE id = :id");
+            $stmt = $conexion->prepare("UPDATE prendas SET activo = 0 WHERE id = :id");
             $stmt->execute([":id" => $id]);
             responder(200, ["mensaje" => "Prenda dada de baja"]);
             break;
@@ -209,7 +201,7 @@ try {
     }
 
 } catch (PDOException $error) {
-    //error inesperado de la base: el detalle va al log, al usuario un mensaje generico.
     error_log($error->getMessage());
-    responder(500, ["error" => "Error interno del servidor"]);
+    // Muestra el mensaje detallado para diagnosticar si aún falta alguna columna en la BD
+    responder(500, ["error" => "Error de base de datos: " . $error->getMessage()]);
 }
