@@ -124,7 +124,7 @@ async function crearCliente(infoForm) {
 
 async function updateCliente(infoCliente,infoForm) {
 	let cliente = {
-		nombre:infoCliente.nombre,
+		nombre:infoForm.get("nombre"),
 		telefono:infoForm.get("telefono"),
 		dni:infoForm.get("dni"),
 		direccion:infoForm.get("direccion"),
@@ -135,6 +135,10 @@ async function updateCliente(infoCliente,infoForm) {
 		return await pedirApi("clientes.php?id="+infoCliente.id,"DELETE");
 	}
 	return await pedirApi("clientes.php?id="+infoCliente.id,"PUT",cliente);
+}
+
+async function deleteCliente(clienteId) {
+	return await pedirApi("clientes.php?id="+clienteId,"DELETE");
 }
 
 //---------------PRENDAS---------------//
@@ -169,7 +173,7 @@ async function postPrenda(infoForm) {
 
 async function updatePrenda(prendaActual,infoForm) {
 	let prenda = {
-		descripcion:prendaActual.descripcion,
+		descripcion:infoForm.get("descripcion"),
 		talle:infoForm.get("talle"),
 		color:infoForm.get("color"),
 		precio: new Number(infoForm.get("precio")),
@@ -179,6 +183,10 @@ async function updatePrenda(prendaActual,infoForm) {
 		return await pedirApi("productos.php?id="+prendaActual.id,"DELETE");
 	}
 	return await pedirApi("productos.php?id="+prendaActual.id,"PUT",prenda);
+}
+
+async function deletePrenda(prendaId) {
+	return await pedirApi("productos.php?id="+prendaId,"DELETE");
 }
 
 //---------------PAGOS---------------//

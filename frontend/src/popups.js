@@ -175,7 +175,10 @@ const popupNuevaEntrega = (()=>{
 
 		if (nombreCliente) {
 			busquedaClienta.value = nombreCliente;
+		} else {
+			busquedaClienta.value = "";
 		}
+		busquedaPrenda.value = "";
 
 		self.prendasSeleccionadas = [];
 		listaPrendas.innerHTML = "";
@@ -347,6 +350,8 @@ const popupRegistrarPago = (()=>{
 		self.popup.showModal();
 		if (nombreCliente) {
 			busquedaClienta.value = nombreCliente;
+		} else {
+			busquedaClienta.value = "";
 		}
 		cargarOpciones().then(actualizarSaldoVisible);
 	};
@@ -459,9 +464,13 @@ const popupNuevoCliente = (()=>{
 	};
 	
 	const contenedorError = document.getElementById("NC-err")
+	const inputs = self.formulario.querySelectorAll("input, textarea");
 	self.abrir = ()=>{
 		contenedorError.innerHTML = "";
 		self.submitted = false;
+		inputs.forEach((input)=>{
+			input.value = "";
+		});
 		self.popup.showModal();
 	};
 	
@@ -493,10 +502,14 @@ const popupNuevaPrenda = (()=>{
 		submitted: false,
 	};
 
-	const contenedorError = document.getElementById("NP-err")
+	const contenedorError = document.getElementById("NP-err");
+	const inputs = self.formulario.querySelectorAll("input, textarea");
 	self.abrir = ()=>{
 		contenedorError.innerHTML = "";
 		self.submitted = false;
+		inputs.forEach((input)=>{
+			input.value = "";
+		});
 		self.popup.showModal();
 	};
 	self.formulario.addEventListener("submit",async (event)=>{
@@ -530,7 +543,8 @@ const actualizarDatosCliente = (()=>{
 
 	let clienteActual = undefined;
 	const contenedorError = document.getElementById("EDC-err");
-	const titulo = document.getElementById("EDC-nombre");
+	const titulo = document.getElementById("EDC-titulo");
+	const inputNombre = document.getElementById("EDC-nombre")
 	const inputTelefono = document.getElementById("EDC-telefono");
 	const inputDNI = document.getElementById("EDC-dni");
 	const inputDireccion = document.getElementById("EDC-direccion");
@@ -540,7 +554,8 @@ const actualizarDatosCliente = (()=>{
 	self.abrir = (infoCliente)=>{
 		contenedorError.innerHTML = "";
 		titulo.innerText = "Editando: "+infoCliente.nombre;
-		inputTelefono.value = infoCliente.telefono;
+		inputNombre.value = infoCliente.nombre ?? "";
+		inputTelefono.value = infoCliente.telefono ?? "";
 		inputDNI.value = infoCliente.dni ?? "";
 		inputDireccion.value = infoCliente.direccion ?? "";
 		inputCiudad.value = infoCliente.ciudad ?? "";
@@ -631,7 +646,6 @@ const popupDatosCliente = (()=>{
 			if (err.name != "AbortError") {
 				saldoCliente.innerText = "Error de carga";
 				descripcionSaldo.innerText = "Error de carga";
-				console.log(err)
 			}
 			return;
 		} finally {
@@ -865,6 +879,22 @@ const popupDatosCliente = (()=>{
 			self.submitted = true;
 		})
 	})
+	const contenedorError = document.getElementById("DC-err");
+	document.getElementById("DC-borrar").addEventListener("click",async (event)=>{
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
+		self.submitted = true;
+		try {
+			await deleteCliente(self.clienteActual.id);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo borrar el cliente: "+err));
+			self.submitted = false
+			return;
+		}
+		self.popup.close();
+	})
 
 	return self;
 })();
@@ -880,6 +910,7 @@ const popupDatosPrenda = (()=>{
 	let prendaActual = undefined;
 	const contenedorError = document.getElementById("DP-err");
 	const titulo = document.getElementById("DP-nombre");
+	const inputDesc = document.getElementById("DP-descripcion");
 	const inputTalle = document.getElementById("DP-talle");
 	const inputColor = document.getElementById("DP-color");
 	const inputPrecio = document.getElementById("DP-precio");
@@ -887,7 +918,8 @@ const popupDatosPrenda = (()=>{
 	const inputActivo = document.getElementById("DP-activo");
 	self.abrir = (infoPrenda)=>{
 		contenedorError.innerHTML = "";
-		titulo.innerText = infoPrenda.descripcion;
+		titulo.innerText = "Editando: "+infoPrenda.descripcion;
+		inputDesc.value = infoPrenda.descripcion ?? "";
 		inputTalle.value = infoPrenda.talle ?? "";
 		inputColor.value = infoPrenda.color ?? "";
 		inputPrecio.value = infoPrenda.precio ?? 0;
@@ -900,6 +932,23 @@ const popupDatosPrenda = (()=>{
 	self.popup.addEventListener("close",()=>{
 		prendaActual = undefined;
 	});
+
+
+	document.getElementById("DP-borrar").addEventListener("click",async (event)=>{
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
+		self.submitted = true;
+		try {
+			await deletePrenda(prendaActual.id);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo borrar la prenda: "+err));
+			self.submitted = false;
+			return;
+		}
+		self.popup.close();
+	})
 
 	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();
