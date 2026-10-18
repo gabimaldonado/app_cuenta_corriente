@@ -881,14 +881,18 @@ const popupDatosCliente = (()=>{
 	})
 	const contenedorError = document.getElementById("DC-err");
 	document.getElementById("DC-borrar").addEventListener("click",async (event)=>{
+		if (self.submitted) {
+			return;
+		}
 		contenedorError.innerHTML = "";
+		self.submitted = true;
 		try {
 			await deleteCliente(self.clienteActual.id);
 		} catch (err) {
 			contenedorError.appendChild(crearElementoErr("No se pudo borrar el cliente: "+err));
+			self.submitted = false
 			return;
 		}
-		self.submitted = true;
 		self.popup.close();
 	})
 
@@ -928,6 +932,23 @@ const popupDatosPrenda = (()=>{
 	self.popup.addEventListener("close",()=>{
 		prendaActual = undefined;
 	});
+
+
+	document.getElementById("DP-borrar").addEventListener("click",async (event)=>{
+		if (self.submitted) {
+			return;
+		}
+		contenedorError.innerHTML = "";
+		self.submitted = true;
+		try {
+			await deletePrenda(prendaActual.id);
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo borrar la prenda: "+err));
+			self.submitted = false;
+			return;
+		}
+		self.popup.close();
+	})
 
 	self.formulario.addEventListener("submit",async (event)=>{
 		event.preventDefault();

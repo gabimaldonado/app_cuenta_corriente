@@ -185,6 +185,10 @@ async function updatePrenda(prendaActual,infoForm) {
 	return await pedirApi("productos.php?id="+prendaActual.id,"PUT",prenda);
 }
 
+async function deletePrenda(prendaId) {
+	return await pedirApi("productos.php?id="+prendaId,"DELETE");
+}
+
 //---------------PAGOS---------------//
 
 async function getPagosCliente(cliente_id,abortSignal) {
