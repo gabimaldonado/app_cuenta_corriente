@@ -884,8 +884,8 @@ const popupDatosCliente = (()=>{
 		contenedorError.innerHTML = "";
 		try {
 			await deleteCliente(self.clienteActual.id);
-		} catch {
-			contenedorError.appendChild(crearElementoErr("No se pudo borrar el cliente."));
+		} catch (err) {
+			contenedorError.appendChild(crearElementoErr("No se pudo borrar el cliente: "+err));
 			return;
 		}
 		self.submitted = true;
