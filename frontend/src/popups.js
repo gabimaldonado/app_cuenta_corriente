@@ -175,7 +175,10 @@ const popupNuevaEntrega = (()=>{
 
 		if (nombreCliente) {
 			busquedaClienta.value = nombreCliente;
+		} else {
+			busquedaClienta.value = "";
 		}
+		busquedaPrenda.value = "";
 
 		self.prendasSeleccionadas = [];
 		listaPrendas.innerHTML = "";
@@ -347,6 +350,8 @@ const popupRegistrarPago = (()=>{
 		self.popup.showModal();
 		if (nombreCliente) {
 			busquedaClienta.value = nombreCliente;
+		} else {
+			busquedaClienta.value = "";
 		}
 		cargarOpciones().then(actualizarSaldoVisible);
 	};
