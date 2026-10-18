@@ -94,6 +94,26 @@ Se manda en el encabezado `Authorization: Bearer <token>`. Sin token válido res
 - **Devuelve:** el resultado → {"entrega_id": 4, "estado": "cerrada", "comprados": 1, "devueltos": 1, "total_comprado": 45000.0}
 - **Códigos:** 200 (entrega cerrada) · 400 (faltan datos o un ítem no pertenece a esa entrega) · 401 (sin token o vencido) · 404 (la entrega no existe) · 405 (no se usó PUT) · 409 (la entrega ya estaba cerrada) · 500 (falló la base)
 
+### GET /api/pagos.php (protegido)
+- **Para qué:** listar todos los pagos registrados de una clienta específica, ordenados del más reciente al más antiguo.
+- **Recibe:** el id de la clienta por URL → `?cliente_id=1`.
+- **Devuelve:** una lista de pagos → `[{"id": 1, "cliente_id": 1, "fecha": "2026-10-10 14:30:00", "monto": 20000.0, "medio": "efectivo", "observacion": "Seña inicial"}]`. Si no tiene pagos registrados, devuelve un array vacío `[]`.
+- **Códigos:** 200 (bien; la lista puede venir vacía) · 400 (falta `cliente_id` o no es un número) · 401 (sin token o vencido) · 500 (falló la base).
+
+### POST /api/pagos.php (protegido)
+- **Para qué:** registrar un nuevo pago realizado por una clienta. Impacta de inmediato en el saldo de su cuenta corriente. 
+- **Recibe:** id de la clienta, importe, medio de cobro y observación opcional → `{"cliente_id": 1, "monto": 25000.0, "medio": "transferencia", "observacion": "Pago parcial jeans"}`.
+- **Devuelve:** el pago registrado con el saldo restante actualizado → `{"mensaje": "Pago registrado con éxito", "id": 5, "saldo_actual": 225000.0}`.
+- **Códigos:** 201 (pago registrado) · 400 (faltan campos obligatorios, JSON mal formado o medio de pago inválido) · 401 (sin token o vencido) · 404 (la clienta no existe o está inactiva) · 422 (el monto es menor o igual a cero, o excede la deuda actual) · 500 (falló la base).
+
+### GET /api/resumen.php (protegido)
+- **Para qué:** calcular dinámicamente el estado de cuenta de una clienta (total comprado, total abonado y saldo actual), o listar todas las clientas que mantienen deuda activa.
+- **Recibe:** por URL `?cliente_id={id}` para el resumen individual, o `?deudores=1` para listar deudoras.
+- **Devuelve:** 
+  - Con `?cliente_id=1` → `{"cliente_id": 1, "total_compras": 275000.0, "total_pagos": 50000.0, "saldo_actual": 225000.0}`.
+  - Con `?deudores=1` → lista de clientas con saldo positivo `[{"id": 1, "nombre": "Marta Fernández", "saldo_actual": 225000.0}]`.
+- **Códigos:** 200 (bien) · 400 (parámetro ausente o inválido) · 401 (sin token o vencido) · 404 (la clienta no existe) · 500 (falló la base).
+
 _(Los demás integrantes agregan acá sus endpoints con este mismo formato.)_
 
 ---
@@ -155,6 +175,9 @@ _(A completar: geocodificación con Open-Meteo y mapa con Leaflet + OpenStreetMa
 - **Las entregas abiertas no vencen:** pueden quedar abiertas indefinidamente.
 - **Plan de Railway:** usamos la prueba gratuita (30 días o US$5 de crédito). Para mantener el despliegue hasta el TP N.º 2 hay que pasar al plan Hobby.
 - **Cambios en la base de la nube:** las modificaciones de `schema.sql` no se aplican solas en Railway; hay que ejecutarlas a mano.
+- **Sin reversión de pagos:** un pago asentado no puede editarse ni eliminarse desde la API; requiere ajustes manuales o notas de crédito.
+- **Sin saldo a favor ni imputación puntual:** los pagos impactan sobre la deuda global de la clienta (no se permite pagar más del saldo pendiente ni asociar un cobro a una entrega específica).
+- **Sin comprobante automático por email:** la emisión y envío automático de comprobantes por correo queda diferida para la segunda entrega; el cobro se asienta y refleja directamente en el saldo de la app.
 
 _(A completar al final, con lo que quedó sin hacer o funciona con alguna restricción.)_
 
@@ -183,6 +206,13 @@ El contrato completo de estos endpoints está en docs/contrato_entregas.md.
 - **Consultas preparadas y errores controlados.** Todos los datos que llegan del cliente se usan como parámetros de PDO. Si la base falla, la respuesta es un 500 con un mensaje genérico y el detalle va a error_log().
 - **Pantallas.** En «Inicio», el botón «Nueva Entrega» abre un formulario donde se elige la clienta, se buscan y agregan prendas del catálogo (solo las que tienen stock) y se ve el total a prueba; al guardar se llama a `POST entregas.php`. En cada entrega abierta, «Confirmar >» abre la lista de prendas con «Se queda / Devuelve» y el importe que se suma al saldo; al confirmar se llama a `PUT confirmar_entrega.php`. Si la API responde con un error (por ejemplo, una prenda sin stock o una entrega ya cerrada), el mensaje se muestra en rojo dentro del popup y este no se cierra. Si el token venció, se vuelve a la pantalla de login.
 
+
+### Pagos y cuenta corriente
+
+- **El saldo nunca se persiste en la base.** Siguiendo la regla de negocio, no existe una columna `saldo` en la tabla `clientes`. Se calcula siempre en tiempo real en `resumen.php` restando el total acumulado de pagos al total acumulado de compras confirmadas (`saldo = SUM(compras) - SUM(pagos)`). Esto evita inconsistencias si se confirman prendas nuevas, se corrigen precios o se procesan cobros simultáneos.
+- **Manejo de nulos con `COALESCE`.** En las consultas SQL de agregación para el saldo, se utiliza `COALESCE(SUM(...), 0)`. De este modo, si una clienta recién registrada no tiene compras o aún no efectuó ningún pago, la base devuelve `0` numérico y no `NULL`, previniendo errores de cálculo o advertencias en PHP.
+- **Validaciones estrictas de montos.** En `POST pagos.php` se valida que el importe sea numérico y estrictamente mayor a cero (`> 0`). Un monto negativo o nulo responde **422 Unprocessable Entity**. Además, se comprueba que la clienta exista y esté activa antes de registrar la operación.
+- **Consultas preparadas y transacciones.** La inserción del cobro en la tabla `pagos` se ejecuta con PDO parametrizado (`:cliente_id`, `:monto`, `:medio`, `:observacion`) para prevenir inyecciones SQL.
 
 ### Diseño general del sitio
 
