@@ -232,9 +232,9 @@
 			<form id="NP-formulario">
 				<label for="NP-descripcion">Descripcion*</label>
 				<input id="NP-descripcion" name="descripcion" type="text" placeholder="Descripcion" maxlength="100" required>
-				<label for="NP-talle">Talle</label>
+				<label for="NP-talle">Talle*</label>
 				<input id="NP-talle" name="talle" type="text" maxlength="10" placeholder="Talle">
-				<label for="NP-color">Color</label>
+				<label for="NP-color">Color*</label>
 				<input id="NP-color" name="color" type="text" maxlength="30" placeholder="Color">
 				<label for="NP-precio">Precio*</label>
 				<input id="NP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
@@ -252,8 +252,12 @@
 			<header>
 				<a class="popupBack">&lt;</a>
 				<h2 id="DC-nombre">Nombre y Apellido</h2>
-				<a id="DC-editar" href="#">Editar</a>
+				<div id="DC-controles">
+					<a id="DC-editar" href="#">Editar</a>
+					<a id="DC-borrar" href="#">Borrar</a>
+				</div>
 			</header>
+			<div id="DC-err"></div>
 			<p id="DC-numYDni">+54 9 11 0000-0000 - DNI 00.000.000</p>
 			<section class="statusHeader">
 				<h3>SALDO ACTUAL</h3>
@@ -290,10 +294,12 @@
 		<div class="popupContent">
 			<header>
 				<a class="popupBack">&lt;</a>
-				<h2 id="EDC-nombre">Editando Nombre y Apellido</h2>
+				<h2 id="EDC-titulo">Editando Nombre y Apellido</h2>
 			</header>
 			<div id="EDC-err"></div>
 			<form id="EDC-formulario">
+				<label for="EDC-nombre">Nombre y Apellido*</label>
+				<input id="EDC-nombre" name="nombre" type="text" placeholder="Nombre y Apellido" maxlength="100" required>
 				<label for="EDC-telefono">Telefono*</label>
 				<input id="EDC-telefono" name="telefono" type="tel", placeholder="Telefono" required>
 				<label for="EDC-dni">DNI</label>
@@ -324,10 +330,12 @@
 			</header>
 			<div id="DP-err"></div>
 			<form id="DP-formulario">
-				<label for="DP-talle">Talle</label>
-				<input id="DP-talle" name="talle" type="text" maxlength="10" placeholder="Talle">
-				<label for="DP-color">Color</label>
-				<input id="DP-color" name="color" type="text" maxlength="30" placeholder="Color">
+				<label for="DP-descripcion">Descripcion*</label>
+				<input id="DP-descripcion" name="descripcion" type="text" placeholder="Descripcion" maxlength="100" required>
+				<label for="DP-talle">Talle*</label>
+				<input id="DP-talle" name="talle" type="text" maxlength="10" placeholder="Talle" required>
+				<label for="DP-color">Color*</label>
+				<input id="DP-color" name="color" type="text" maxlength="30" placeholder="Color" required>
 				<label for="DP-precio">Precio*</label>
 				<input id="DP-precio" name="precio" type="number" min="0" placeholder="Precio" required>
 				<label for="DP-stock">Stock*</label>
