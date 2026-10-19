@@ -79,7 +79,7 @@ function geocodificarCiudad($ciudad) {
 
     // si no hay coincidencias, la respuesta no trae lista "results"
     foreach (($datos["results"] ?? []) as $lugar) {
-        $pais = $lugar["country_code" ?? ""];
+        $pais = $lugar["country_code"] ?? "";
         if ($pais === GEOCODIFICACION_PAIS && isset($lugar["latitude"], $lugar["longitude"])) {
             return [
                 "estado"   => "ok",
