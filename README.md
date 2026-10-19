@@ -222,6 +222,19 @@ _(A completar al final, con lo que quedó sin hacer o funciona con alguna restri
 - **Consultas preparadas:** todas las consultas usan PDO con parámetros (`:email`, `:token`), así lo que escribe el usuario nunca se mezcla con el SQL (evita la inyección SQL).
 - **Errores de conexión:** si la base no responde, `api/conexion.php` devuelve un JSON con **500** y guarda el detalle con `error_log()`, sin mostrarlo al usuario.
 
+- ### Clientes y catálogo
+- **El borrado es lógico.** DELETE no elimina la fila: marca activo = 0 y la clienta o la prenda deja de aparecer en los listados. Se hace así porque las clientas tienen entregas, compras y pagos asociados (y las prendas están dentro de entregas ya registradas), y borrar la fila rompería esas relaciones y haría perder la deuda. El DELETE responde 204 porque no hay nada para devolver.
+- **El teléfono se guarda solo con dígitos y código de país** (por ejemplo 5491122334455, entre 10 y 15 dígitos), porque el link de WhatsApp lo necesita sin símbolos.
+- **El DNI es opcional, pero no se puede repetir.** La columna es UNIQUE, que permite varias clientas sin DNI (NULL). Si se informa, debe tener 7 u 8 dígitos. El chequeo de repetidos incluye a las clientas dadas de baja, y al editar se excluye a la propia clienta para que su DNI no cuente como repetido.
+- **Consultas preparadas en todo.** Lo que llega en la URL o en el cuerpo se pasa siempre como parámetro de PDO, incluso en las búsquedas con LIKE, así nunca se mezcla con el SQL.
+- **Las validaciones se hacen en PHP, además de en la base.** precio y stock no pueden ser negativos (también hay un CHECK en la tabla), el stock tiene que ser un entero y el precio un número. Así la API responde 400 con un mensaje claro en lugar de un error de MySQL.
+- **Los números salen como números.** PDO devuelve los números de MySQL como texto; clientes.php y productos.php los convierten para que el JSON tenga 45000.0 y no "45000.00".
+- **La ciudad se geocodifica en el backend, al guardar.** clientes.php llama a servicios.php cuando se crea o se edita una clienta con ciudad, y guarda latitud y longitud en la base. Así el mapa lee coordenadas ya calculadas, no depende de Open-Meteo cada vez que se abre y el navegador no consulta ningún servicio externo.
+- **422 y 400 significan cosas distintas.** Si el pedido está mal armado (falta el nombre, el teléfono es inválido) responde 400. Si el pedido está bien armado pero la ciudad no existe, responde 422: el dato no se puede procesar.
+- **Una falla del servicio externo no impide guardar.** Si Open-Meteo no responde, la clienta se guarda igual con latitud y longitud en null. En el PUT, si la ciudad no cambió y ya tenía coordenadas, no se vuelve a consultar.
+- **Se agregaron las columnas foto y activo a productos.** activo permite la baja lógica, porque entrega_items tiene una clave foránea a productos y una prenda ya entregada no se puede borrar de verdad. foto guarda opcionalmente la dirección de una imagen.
+- **Errores controlados.** Si la base falla, la respuesta es un 500 con un mensaje genérico y el detalle va a error_log().
+
 
 ### Entregas y confirmación de compra
 El contrato completo de estos endpoints está en docs/contrato_entregas.md.
