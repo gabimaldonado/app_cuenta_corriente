@@ -138,7 +138,22 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 
 ## 5. Servicios externos
 
-_(A completar: geocodificación con Open-Meteo y mapa con Leaflet + OpenStreetMap. Para cada uno: quién lo llama, qué datos salen y qué pasa si falla.)_
+_Geocodificación: API de Open-Meteo
+- Para qué se usa: convertir la ciudad de una clienta en latitud y longitud para mostrarla en el mapa.
+- Quién la llama: el backend, desde la función geocodificarCiudad() de api/servicios.php, que invoca clientes.php al crear o editar una clienta. El navegador nunca la llama.
+- Qué datos salen:solamente el nombre de la ciudad. No se envía ningún dato personal de la clienta. No requiere clave de API para uso no comercial.
+- Qué devuelve y cómo se usa: se piden varios resultados y se toma el primero de Argentina (código AR), porque hay ciudades con el mismo nombre en otros países.
+- Qué pasa si falla:
+  - Si el servicio responde pero no encuentra la ciudad, la API responde 422 y no guarda la clienta.
+  - Si el servicio no responde (sin conexión, demora de más de 5 segundos o error del servidor), la clienta se guarda sin coordenadas y el error queda en el log del servidor.
+  - Si la ciudad viene vacía, no se consulta nada y la clienta queda sin coordenadas.
+
+
+#La ubicación es aproximada: Open-Meteo busca por nombre de lugar, no por calle y número, así que el punto del mapa es el de la ciudad y no el de la casa de la clienta.
+Solo se aceptan ciudades de Argentina.
+No hay forma de reactivar desde la API a una clienta o prenda dada de baja, y el DNI de una clienta dada de baja sigue ocupado.
+La foto es solo una dirección de texto: la API no permite subir archivos de imagen.
+Los listados no tienen paginación: devuelven todas las filas activas.
 
 ---
 
