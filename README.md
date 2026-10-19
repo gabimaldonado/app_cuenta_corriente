@@ -138,10 +138,10 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 
 ## 5. Servicios externos
 
-#Geocodificación: API de Open-Meteo
+# Geocodificación: API de Open-Meteo
 - Para qué se usa: convertir la ciudad de una clienta en latitud y longitud para mostrarla en el mapa.
 - Quién la llama: el backend, desde la función geocodificarCiudad() de api/servicios.php, que invoca clientes.php al crear o editar una clienta. El navegador nunca la llama.
-- Qué datos salen:solamente el nombre de la ciudad. No se envía ningún dato personal de la clienta. No requiere clave de API para uso no comercial.
+- Qué datos salen: solamente el nombre de la ciudad. No se envía ningún dato personal de la clienta. No requiere clave de API para uso no comercial.
 - Qué devuelve y cómo se usa: se piden varios resultados y se toma el primero de Argentina (código AR), porque hay ciudades con el mismo nombre en otros países.
 - Qué pasa si falla:
   - Si el servicio responde pero no encuentra la ciudad, la API responde 422 y no guarda la clienta.
@@ -155,6 +155,17 @@ Solo se aceptan ciudades de Argentina.
 No hay forma de reactivar desde la API a una clienta o prenda dada de baja, y el DNI de una clienta dada de baja sigue ocupado.
 La foto es solo una dirección de texto: la API no permite subir archivos de imagen.
 Los listados no tienen paginación: devuelven todas las filas activas.
+
+# Mapa de clientas: Leaflet y OpenStreetMap
+- Para qué se usa: Para interpretar los valores de latitud y longitud de la api, y poder visualizarlos en el frontend de forma coherente (como marcadores en un mapa interactivo).
+- Quién la llama: El frontend, dentro de la inicialización de la ventana emergente de mapas (popupMapaClientes dentro de popups.js)
+- Cómo se usa:
+	- Se utiliza a Leaflet como librería de mapa interactivo, que permite insertar marcadores con notas usando latitud y longitud. Esta librería se carga 1 sola vez al abrirse la página.
+	- Se utiliza OpenStreetMap como proveedora de las imágenes individuales o "tiles" que se muestran visiblemente en el mapa interactivo, con los detalles de calles, edificios, relieves, etc.
+- Qué datos salen: Ningunos propios de la aplicación, solo los nombres de las imágenes del mapa que le pide Leaflet a OpenStreetMap para poder visualizarlas. La longitud y la latitud se mantienen dentro del JavaScript.
+- Qué pasa si falla: 
+	- Si la librería de Leaflet no carga, el sitio funciona de todas maneras. La ventana emergente del mapa de clientas mostrara un error indicando que no se ha podido cargar.
+	- Si OpenStreetMap falla, el mapa o partes del mismo se mostrarán en blanco, pero esto en sí no perjudica el funcionamiento del mapa interactivo o sus marcadores.
 
 ---
 

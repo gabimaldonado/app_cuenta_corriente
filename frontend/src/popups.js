@@ -978,11 +978,18 @@ const popupMapaClientes = (()=>{
 		abrir:undefined,
 		mapa:undefined
 	};
-	self.mapa = new L.LeafletMap(self.elementoMapa).setView([-34.6037, -58.3816], 13);
-	new L.TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-		maxZoom: 19,
-		attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-	}).addTo(self.mapa);
+
+	const divErr = document.getElementById("MC-err");
+	try {
+		self.mapa = new L.LeafletMap(self.elementoMapa).setView([-34.6037, -58.3816], 13);
+		new L.TileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			maxZoom: 19,
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		}).addTo(self.mapa);
+	} catch (err) {
+		divErr.appendChild(crearElementoErr("No se ha podido cargar el mapa interactivo: "+err+"\n Recargue la pagina para reintentar."));
+	}
+	
 
 	self.abrir = () => {
 		self.popup.showModal();
@@ -990,9 +997,12 @@ const popupMapaClientes = (()=>{
 	};
 
 	self.marcadoresActuales = [];
-	const divErr = document.getElementById("MC-err");
 	let abortCargaClientes = undefined;
 	async function cargarClientes() {
+		if (!self.mapa) {
+			return;
+		}
+		
 		abortCargaClientes = manejarAbort(abortCargaClientes);
 
 		self.marcadoresActuales.forEach((marcador)=>{
