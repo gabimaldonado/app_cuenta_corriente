@@ -32,7 +32,7 @@ App web para una vendedora de ropa que trabaja con **cuenta corriente**: las cli
 
 1. Clonar el repositorio dentro de `C:\xampp\htdocs`, así queda la carpeta `C:\xampp\htdocs\app_cuenta_corriente`.
 2. Abrir XAMPP e iniciar **Apache** y **MySQL**.
-3. Entrar a `http://localhost/phpmyadmin` → pestaña **Importar** e importar, **en este orden**:
+3. Entrar a `http://localhost/phpmyadmin` pestaña **Importar** e importar, **en este orden**:
    1. `sql/schema.sql` (crea la base `cuenta_corriente` y las 6 tablas)
    2. `sql/datos_prueba.sql` (carga el usuario de prueba, clientas, prendas, entregas y pagos)
 4. Probar que la API conecta con la base: `http://localhost/app_cuenta_corriente/api/estado.php`
@@ -79,7 +79,7 @@ Se manda en el encabezado `Authorization: Bearer <token>`. Sin token válido res
 ### GET /api/clientes.php (protegido)
 - **Para qué:** listar las clientas activas, ordenadas por nombre. Con `?id=` devuelve una sola y con `?buscar=` filtra por nombre o DNI.
 - **Recibe:** nada en el cuerpo; los filtros van en la URL.
-- **Devuelve:** una lista de clientas → `[{"id": 1, "nombre": "Laura Gómez", "telefono": "5492914000001", "dni": "30111222", "direccion": "Belgrano 123", "ciudad": "Bahía Blanca", "notas": "Prefiere talle M", "latitud": -38.7183, "longitud": -62.2663, "activo": 1}]`. Con `?id=` devuelve un solo objeto.
+- **Devuelve:** una lista de clientas `[{"id": 1, "nombre": "Laura Gómez", "telefono": "5492914000001", "dni": "30111222", "direccion": "Belgrano 123", "ciudad": "Bahía Blanca", "notas": "Prefiere talle M", "latitud": -38.7183, "longitud": -62.2663, "activo": 1}]`. Con `?id=` devuelve un solo objeto.
 - **Códigos:** 200 (bien; la lista puede venir vacía) · 400 (`?id=` que no es un número) · 401 (sin token o vencido) · 404 (`?id=` de una clienta que no existe o está dada de baja)
 
 ### POST /api/clientes.php (protegido)
@@ -102,7 +102,7 @@ Se manda en el encabezado `Authorization: Bearer <token>`. Sin token válido res
 ### GET /api/productos.php (protegido)
 - **Para qué:** listar las prendas activas del catálogo. Con `?id=` devuelve una sola, con `?buscar=` busca en descripción, talle o color, y con `?stock=con` o `?stock=sin` filtra por stock. Los filtros se pueden combinar.
 - **Recibe:** nada en el cuerpo; los filtros van en la URL.
-- **Devuelve:** una lista de prendas → `[{"id": 1, "descripcion": "Jean recto", "talle": "38", "color": "Azul", "precio": 45000.0, "stock": 5, "foto": null, "activo": 1}]`. Con `?id=` devuelve un solo objeto.
+- **Devuelve:** una lista de prendas `[{"id": 1, "descripcion": "Jean recto", "talle": "38", "color": "Azul", "precio": 45000.0, "stock": 5, "foto": null, "activo": 1}]`. Con `?id=` devuelve un solo objeto.
 - **Códigos:** 200 (bien; la lista puede venir vacía) · 400 (`?stock=` con un valor que no es `con` ni `sin`, o `?id=` que no es un número) · 401 (sin token o vencido) · 404 (`?id=` de una prenda que no existe)
 
 ### POST /api/productos.php (protegido)
@@ -125,25 +125,25 @@ Se manda en el encabezado `Authorization: Bearer <token>`. Sin token válido res
 ### GET /api/entregas.php (protegido)
 - **Para qué:** listar las entregas a prueba, cada una con sus prendas. Con `?id=` devuelve una sola entrega, con `?cliente_id=` las de una clienta y con `?estado=` (`abierta` o `cerrada`) las de ese estado.
 - **Recibe:** nada en el cuerpo; los filtros van en la URL.
-- **Devuelve:** una lista de entregas → `[{"id": 2, "cliente_id": 2, "fecha": "2026-09-28 17:00:00", "estado": "abierta", "entrega_items": [{"id": 6, "entrega_id": 2, "producto_id": 6, "precio_unitario": 35000.0, "estado": "en_prueba"}]}]`. Con `?id=` devuelve un solo objeto, sin la lista.
+- **Devuelve:** una lista de entregas `[{"id": 2, "cliente_id": 2, "fecha": "2026-09-28 17:00:00", "estado": "abierta", "entrega_items": [{"id": 6, "entrega_id": 2, "producto_id": 6, "precio_unitario": 35000.0, "estado": "en_prueba"}]}]`. Con `?id=` devuelve un solo objeto, sin la lista.
 - **Códigos:** 200 (bien; la lista puede venir vacía) · 401 (sin token o vencido) · 404 (`?id=` de una entrega que no existe)
 
 ### POST /api/entregas.php (protegido)
 - **Para qué:** crear una entrega: la clienta se lleva prendas a probar. Descuenta una unidad del stock por cada prenda y no modifica ningún saldo.
 - **Recibe:** el id de la clienta y los ids de las prendas → `{"cliente_id": 1, "productos": [1, 2]}`
-- **Devuelve:** la entrega creada → `{"id": 4, "cliente_id": 1, "estado": "abierta"}`
+- **Devuelve:** la entrega creada `{"id": 4, "cliente_id": 1, "estado": "abierta"}`
 - **Códigos:** 201 (entrega creada) · 400 (faltan datos, clienta dada de baja, prenda sin stock o id de prenda que no es un número) · 401 (sin token o vencido) · 404 (la clienta o una prenda no existen) · 500 (falló la base)
 
 ### PUT /api/confirmar_entrega.php (protegido)
 - **Para qué:** cerrar una entrega. Las prendas indicadas pasan a `comprada`, todas las demás pasan a `devuelta` y vuelven al stock, y la entrega queda cerrada.
 - **Recibe:** el id de la entrega y los ids de los ítems que la clienta se queda → `{"entrega_id": 4, "items": [10]}`. Son ids de `entrega_items`, no de las prendas. Si devuelve todo, `items` va vacío (`[]`).
-- **Devuelve:** el resultado → `{"entrega_id": 4, "estado": "cerrada", "comprados": 1, "devueltos": 1, "total_comprado": 45000.0}`
+- **Devuelve:** el resultado `{"entrega_id": 4, "estado": "cerrada", "comprados": 1, "devueltos": 1, "total_comprado": 45000.0}`
 - **Códigos:** 200 (entrega cerrada) · 400 (faltan datos o un ítem no pertenece a esa entrega) · 401 (sin token o vencido) · 404 (la entrega no existe) · 405 (no se usó PUT) · 409 (la entrega ya estaba cerrada) · 500 (falló la base)
 
 ### GET /api/pagos.php (protegido)
 - **Para qué:** listar los pagos de una clienta, del más reciente al más antiguo.
 - **Recibe:** nada en el cuerpo; el id de la clienta va en la URL → `?cliente_id=1`
-- **Devuelve:** una lista de pagos → `[{"id": 1, "cliente_id": 1, "fecha": "2026-10-10 14:30:00", "monto": 20000.0, "medio": "efectivo", "observacion": "Seña inicial"}]`. Si no tiene pagos, devuelve una lista vacía (`[]`).
+- **Devuelve:** una lista de pagos `[{"id": 1, "cliente_id": 1, "fecha": "2026-10-10 14:30:00", "monto": 20000.0, "medio": "efectivo", "observacion": "Seña inicial"}]`. Si no tiene pagos, devuelve una lista vacía (`[]`).
 - **Códigos:** 200 (bien; la lista puede venir vacía) · 400 (falta `cliente_id` o no es un número) · 401 (sin token o vencido) · 500 (falló la base)
 
 ### POST /api/pagos.php (protegido)
@@ -156,15 +156,15 @@ Se manda en el encabezado `Authorization: Bearer <token>`. Sin token válido res
 - **Para qué:** calcular el estado de cuenta de una clienta (total comprado, total pagado y saldo), o listar las clientas que deben.
 - **Recibe:** nada en el cuerpo; en la URL va `?cliente_id=1` para una clienta, o `?deudores=1` para listar las que deben.
 - **Devuelve:**
-  - Con `?cliente_id=1` → `{"cliente_id": 1, "total_compras": 275000.0, "total_pagos": 50000.0, "saldo_actual": 225000.0}`
-  - Con `?deudores=1` → las clientas con saldo mayor a cero → `[{"id": 1, "nombre": "Marta Fernández", "saldo_actual": 225000.0}]`
+  - Con `?cliente_id=1` `{"cliente_id": 1, "total_compras": 275000.0, "total_pagos": 50000.0, "saldo_actual": 225000.0}`
+  - Con `?deudores=1` las clientas con saldo mayor a cero → `[{"id": 1, "nombre": "Marta Fernández", "saldo_actual": 225000.0}]`
 - **Códigos:** 200 (bien) · 400 (falta el parámetro o no es válido) · 401 (sin token o vencido) · 404 (la clienta no existe) · 500 (falló la base)
 
 ---
 
 ## 4. Variables de entorno
 
-La configuración se lee con `getenv()` en `api/config.php`. En el código **no hay ninguna contraseña ni clave real**: los valores de producción se cargan solo en el panel de Railway (pestaña *Variables* del servicio de la app). Si una variable no existe, se usa el valor local de XAMPP, por eso en local no hace falta configurar nada.
+La configuración se lee con `getenv()` en `api/config.php`. En el código no hay ninguna contraseña ni clave real: los valores de producción se cargan solo en el panel de Railway (pestaña *Variables* del servicio de la app). Si una variable no existe, se usa el valor local de XAMPP, por eso en local no hace falta configurar nada.
 
 | Variable | Para qué sirve | En local (XAMPP) | En Railway |
 |---|---|---|---|
@@ -176,7 +176,7 @@ La configuración se lee con `getenv()` en `api/config.php`. En el código **no 
 | `CORS_ORIGEN` | Única dirección desde la que el navegador puede llamar a la API (nunca `*`) | `http://localhost:5500` | La URL pública de la app |
 | `APP_ENV` | Con el valor `produccion` se apaga `display_errors`: los errores van al log y no se muestran al visitante | `local` | `produccion` |
 
-Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los datos de su propia base MySQL, así la contraseña nunca se copia a mano ni aparece en el código.
+Las variables con `${{MySQL...}}` son referencias: Railway completa solo los datos de su propia base MySQL, así la contraseña nunca se copia a mano ni aparece en el código.
 
 ---
 
@@ -185,12 +185,12 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 ### Geocodificación: Open-Meteo
 
 - **Para qué se usa:** convertir la ciudad de una clienta en latitud y longitud, para mostrarla en el mapa.
-- **Quién la llama:** el **backend**, con la función `geocodificarCiudad()` de `api/servicios.php`, que usa `clientes.php` al crear o editar una clienta. El navegador nunca la llama.
+- **Quién la llama:** el backend, con la función `geocodificarCiudad()` de `api/servicios.php`, que usa `clientes.php` al crear o editar una clienta. El navegador nunca la llama.
 - **Qué datos salen:** solamente el nombre de la ciudad. No se envía ningún dato personal de la clienta. No necesita clave para uso no comercial.
 - **Qué devuelve y cómo se usa:** se piden varios resultados y se toma el primero de Argentina (código `AR`), porque hay ciudades con el mismo nombre en otros países.
 - **Qué pasa si falla:**
-  - Si el servicio responde pero no encuentra la ciudad, la API responde **422** y no guarda la clienta.
-  - Si el servicio no responde (sin conexión, demora de más de 5 segundos o error del servidor), la clienta **se guarda igual, sin coordenadas**, y el error queda en el log del servidor.
+  - Si el servicio responde pero no encuentra la ciudad, la API responde 422 y no guarda la clienta.
+  - Si el servicio no responde (sin conexión, demora de más de 5 segundos o error del servidor), la clienta se guarda igual, sin coordenadas, y el error queda en el log del servidor.
   - Si la ciudad viene vacía, no se consulta nada y la clienta queda sin coordenadas.
 
 ### Mapa de clientas: Leaflet + OpenStreetMap
@@ -211,26 +211,26 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 
 ## 6. Despliegue
 
-**Proveedor:** [Railway](https://railway.com), una plataforma **PaaS** (plataforma como servicio).
+**Proveedor:** [Railway](https://railway.com), una plataforma PaaS (plataforma como servicio).
 
-**Por qué PaaS y por qué Railway:** con PaaS solo entregamos nuestro código y nuestros datos; el proveedor se encarga del servidor, el sistema operativo, el certificado HTTPS y la red. Railway, además, permite tener la **app y la base MySQL en el mismo proyecto** (comunicadas por una red privada), maneja **variables de entorno** desde su panel y se conecta con GitHub. Lo recomendó la cátedra y no bloquea a clientes que no son navegadores, algo necesario para la app Android del TP N.º 2.
+**Por qué PaaS y por qué Railway:** con PaaS solo entregamos nuestro código y nuestros datos; el proveedor se encarga del servidor, el sistema operativo, el certificado HTTPS y la red. Railway, además, permite tener la app y la base MySQL en el mismo proyecto (comunicadas por una red privada), maneja variables de entorno desde su panel y se conecta con GitHub. Lo recomendó la cátedra y no bloquea a clientes que no son navegadores, algo necesario para la app Android del TP N.º 2.
 
 **Cómo está armado**
 
 - **Servicio de la app:** se construye con el `Dockerfile` de la raíz, que arma un servidor igual a XAMPP (imagen `php:8.2-apache` + extensión `pdo_mysql`). La última línea (`CMD`) deja activo un solo módulo de trabajo de Apache (`mpm_prefork`, el que necesita PHP); sin ella, en Railway Apache no arrancaba (*More than one MPM loaded*).
-- **`index.php` (raíz):** redirige a `frontend/`, así la URL pública lleva directo a la app (y de ahí al login).
+- `index.php` (raíz): redirige a `frontend/`, así la URL pública lleva directo a la app (y de ahí al login).
 - **Servicio MySQL:** base de Railway con su propio volumen de datos. Solo se accede por la red privada del proyecto; el acceso público se usó una sola vez para cargar los scripts y después se cerró.
 - **Frontend y API en el mismo dominio**, por eso las direcciones a la API son relativas (`../api/...`) y no hay problemas de CORS.
 
 **Pasos para volver a desplegar**
 
-1. **Código:** el servicio de la app está conectado a la rama `main` de GitHub. Cada vez que se une algo a `main`, Railway vuelve a construir y desplegar solo (tarda un par de minutos). Si algo falla, el detalle está en *Deployments → Deploy Logs*.
+1. **Código:** el servicio de la app está conectado a la rama `main` de GitHub. Cada vez que se une algo a `main`, Railway vuelve a construir y desplegar solo (tarda un par de minutos). Si algo falla, el detalle está en Deployments → Deploy Logs.
 2. **Desde cero** (proyecto nuevo):
-   1. En Railway: *New Project → Deploy from GitHub repo* → este repositorio.
+   1. En Railway: *New Project Deploy from GitHub repo* → este repositorio.
    2. En el mismo proyecto: *+ Add → Database → MySQL*.
    3. En el servicio de la app → *Variables* → cargar las de la sección 4.
    4. *Settings → Networking → Generate Domain* para obtener la dirección pública con HTTPS.
-   5. Crear las tablas: habilitar temporalmente el acceso público de MySQL, conectarse con un cliente (por ejemplo HeidiSQL) usando los datos de `MYSQL_PUBLIC_URL`, ejecutar `sql/schema.sql` y después `sql/datos_prueba.sql`, y **volver a cerrar** el acceso público.
+   5. Crear las tablas: habilitar temporalmente el acceso público de MySQL, conectarse con un cliente (por ejemplo HeidiSQL) usando los datos de `MYSQL_PUBLIC_URL`, ejecutar `sql/schema.sql` y después `sql/datos_prueba.sql`, y volver a cerrar el acceso público.
    6. Probar `/api/estado.php`: tiene que responder `{"api":"ok","base":"conectada",...}`.
 3. **Cambios en la base:** si se agrega una columna o tabla, además de actualizar `schema.sql` hay que ejecutar el `ALTER TABLE` en la base de Railway (no se actualiza sola).
 
@@ -238,21 +238,21 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 
 ## 7. Limitaciones conocidas
 
-- **Una entrega abierta no se puede editar ni cancelar desde la API:** solo se crea y se confirma.
-- **La confirmación es de todo o nada:** se decide el destino de todas las prendas de la entrega a la vez.
-- **Las entregas abiertas no vencen:** pueden quedar abiertas indefinidamente.
-- **Plan de Railway:** usamos la prueba gratuita (30 días o US$5 de crédito). Para mantener el despliegue hasta el TP N.º 2 hay que pasar al plan Hobby.
-- **Cambios en la base de la nube:** las modificaciones de `schema.sql` no se aplican solas en Railway; hay que ejecutarlas a mano.
-- **Los pagos no se pueden corregir:** un pago registrado no se puede editar ni borrar desde la API; habría que corregirlo a mano en la base.
-- **Sin saldo a favor ni pago por entrega:** los pagos se descuentan de la deuda total de la clienta; no se puede pagar más de lo que debe ni asociar un pago a una entrega en particular.
-- **Sin comprobante por email:** el envío automático de comprobantes por correo queda para la segunda entrega; por ahora el pago solo se refleja en el saldo de la app.
+- Una entrega abierta no se puede editar ni cancelar desde la API: solo se crea y se confirma.
+- La confirmación es de todo o nada: se decide el destino de todas las prendas de la entrega a la vez.
+- Las entregas abiertas no vencen: pueden quedar abiertas indefinidamente.
+- Plan de Railway: usamos la prueba gratuita (30 días o US$5 de crédito). Para mantener el despliegue hasta el TP N.º 2 hay que pasar al plan Hobby.
+- Cambios en la base de la nube: las modificaciones de `schema.sql` no se aplican solas en Railway; hay que ejecutarlas a mano.
+- Los pagos no se pueden corregir: un pago registrado no se puede editar ni borrar desde la API; habría que corregirlo a mano en la base.
+- Sin saldo a favor ni pago por entrega: los pagos se descuentan de la deuda total de la clienta; no se puede pagar más de lo que debe ni asociar un pago a una entrega en particular.
+- Sin comprobante por email: el envío automático de comprobantes por correo queda para la segunda entrega; por ahora el pago solo se refleja en el saldo de la app.
 
-- **Nombres repetidos:** se pueden cargar dos clientas con el mismo nombre; lo que no se repite es el DNI.
-- **La ubicación es aproximada:** Open-Meteo busca por nombre de lugar, no por calle y número, así que el punto del mapa es el de la ciudad y no el de la casa de la clienta. Solo se aceptan ciudades de Argentina.
-- **Las bajas no se pueden deshacer:** no hay forma de reactivar desde la API una clienta o prenda dada de baja, y el DNI de una clienta dada de baja sigue ocupado.
-- **La foto es solo una dirección de texto:** la API no permite subir archivos de imagen.
-- **Sin paginación:** los listados devuelven todas las filas activas.
-- **WhatsApp:** el botón para mandarle el resumen a la clienta está en su ficha, pero todavía no envía nada; queda para la próxima entrega.
+- Nombres repetidos: se pueden cargar dos clientas con el mismo nombre; lo que no se repite es el DNI.
+- La ubicación es aproximada: Open-Meteo busca por nombre de lugar, no por calle y número, así que el punto del mapa es el de la ciudad y no el de la casa de la clienta. Solo se aceptan ciudades de Argentina.
+- Las bajas no se pueden deshacer: no hay forma de reactivar desde la API una clienta o prenda dada de baja, y el DNI de una clienta dada de baja sigue ocupado.
+- La foto es solo una dirección de texto: la API no permite subir archivos de imagen.
+- Sin paginación: los listados devuelven todas las filas activas.
+- WhatsApp: el botón para mandarle el resumen a la clienta está en su ficha, pero todavía no envía nada; queda para la próxima entrega.
 
 ---
 
@@ -262,10 +262,10 @@ Las variables con `${{MySQL...}}` son **referencias**: Railway completa solo los
 
 - **Las contraseñas nunca se guardan en texto plano.** Se guardan con `password_hash()`, que las convierte en un texto irreversible. En el login se comparan con `password_verify()`. Si alguien llegara a ver la base, no podría saber las contraseñas.
 - **Mismo mensaje de error.** Si el email no existe o la contraseña es incorrecta (`401 Email o contraseña incorrectos`), para no darle pistas a quien intente adivinar usuarios.
-- **Token.** Al iniciar sesión, la API crea un token de 64 caracteres al azar (`random_bytes`), lo guarda en la tabla `usuarios` y vence a las **8 horas**. El frontend lo guarda en `localStorage` y lo manda en cada pedido. `api/auth.php` lo revisa: si falta, es inválido o venció, corta con **401** y el endpoint no se ejecuta. Al cerrar sesión el token se borra de la base y deja de servir.
-- **CORS y preflight.** Antes de un pedido con token o con JSON, el navegador manda un pedido `OPTIONS` (el *preflight*) para preguntar si tiene permiso. `api/cors.php` responde **204** y solo autoriza el origen de `CORS_ORIGEN` (nunca `*`).
+- **Token.** Al iniciar sesión, la API crea un token de 64 caracteres al azar (`random_bytes`), lo guarda en la tabla `usuarios` y vence a las 8 horas. El frontend lo guarda en `localStorage` y lo manda en cada pedido. `api/auth.php` lo revisa: si falta, es inválido o venció, corta con 401 y el endpoint no se ejecuta. Al cerrar sesión el token se borra de la base y deja de servir.
+- **CORS y preflight.** Antes de un pedido con token o con JSON, el navegador manda un pedido `OPTIONS` (el *preflight*) para preguntar si tiene permiso. `api/cors.php` responde 204 y solo autoriza el origen de `CORS_ORIGEN` (nunca `*`).
 - **Consultas preparadas.** Todas las consultas usan PDO con parámetros (`:email`, `:token`), así lo que escribe el usuario nunca se mezcla con el SQL (evita la inyección SQL).
-- **Errores de conexión.** Si la base no responde, `api/conexion.php` devuelve un JSON con **500** y guarda el detalle con `error_log()`, sin mostrarlo al usuario.
+- **Errores de conexión.** Si la base no responde, `api/conexion.php` devuelve un JSON con 500 y guarda el detalle con `error_log()`, sin mostrarlo al usuario.
 
 
 ### Clientes y catálogo
@@ -299,12 +299,12 @@ El contrato completo de estos endpoints está en `docs/contrato_entregas.md`.
 
 - **El saldo no se guarda en la base.** No hay una columna `saldo` en `clientes`: `resumen.php` lo calcula cada vez, restando lo pagado a lo comprado (`saldo = SUM(compras) - SUM(pagos)`). Así nunca queda desactualizado aunque se confirmen prendas nuevas o se registren pagos al mismo tiempo.
 - **`COALESCE` para los totales en cero.** Las sumas usan `COALESCE(SUM(...), 0)`: si una clienta nueva todavía no compró ni pagó nada, la base devuelve `0` y no `NULL`, y la cuenta no da error.
-- **Validación del monto.** `POST pagos.php` revisa que el monto sea un número mayor a cero y que no supere la deuda; si no, responde **422**. Antes de registrar el pago también comprueba que la clienta exista y esté activa.
+- **Validación del monto.** `POST pagos.php` revisa que el monto sea un número mayor a cero y que no supere la deuda; si no, responde 422. Antes de registrar el pago también comprueba que la clienta exista y esté activa.
 - **Consultas preparadas.** El pago se guarda con parámetros de PDO (`:cliente_id`, `:monto`, `:medio`, `:observacion`), así lo que se escribe nunca se mezcla con el SQL.
 
 ### Diseño general del sitio
 
 - **Una sola página.** Casi toda la app está en `frontend/index.html`, con submenús y ventanas emergentes manejados con JavaScript. Así se pueden ver todos los datos y hacer cualquier cambio sin cambiar de página.
-- **Submenús.** Desde la barra de navegación de abajo se pasa entre **Inicio**, **Clientes** y **Prendas**. Cada uno muestra la información básica de sus endpoints, con botones para ver más detalle.
+- **Submenús.** Desde la barra de navegación de abajo se pasa entre Inicio, Clientes y Prendas. Cada uno muestra la información básica de sus endpoints, con botones para ver más detalle.
 - **Ventanas emergentes.** Casi todos los formularios para crear o editar datos se abren en ventanas emergentes. Así las pantallas principales quedan limpias y no hace falta una página nueva para cada formulario.
 - **AJAX.** Todas las pantallas piden los datos a la API con `fetch` de forma asincrónica y manejan los errores de cada respuesta. La página nunca necesita recargarse para traer información del servidor.
