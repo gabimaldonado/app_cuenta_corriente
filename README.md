@@ -12,7 +12,7 @@ App web para una vendedora de ropa que trabaja con **cuenta corriente**: las cli
 - **API (ejemplo):** https://reliable-spirit-production-e065.up.railway.app/api/estado.php
 - **Usuario de prueba:**
   - Email: `admin@cuentacorriente.com`
-  - Contraseña: `admin123`
+  - Contraseña: `se avisa por privado a cada integrante del grupo`
 
 **Integrantes**
 
