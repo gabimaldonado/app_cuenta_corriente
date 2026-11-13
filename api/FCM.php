@@ -34,7 +34,12 @@ function enviarNotificacion(
     string $cuerpo
 ): array {
 
-    $tokenAcceso = getTokenAcceso();
+	$tokenAcceso = NULL;
+	try {
+    	$tokenAcceso = getTokenAcceso();
+	} catch (Exception $err) {
+		return [];
+	}
 
     $idProyecto = 'cuenta-corriente-app-movil';
 
@@ -67,7 +72,7 @@ function enviarNotificacion(
     if ($respuesta === false) {
         $error = curl_error($ch);
         curl_close($ch);
-        throw new Exception($error);
+        //throw new Exception($error);
     }
 
     $codigoHttp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
