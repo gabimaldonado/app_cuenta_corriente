@@ -1,2 +1,3 @@
 # Configuración personal de VS Code
-.vscode/cuenta-corriente-app-movil-*.json
+.vscode/
+cuenta-corriente-app-movil-*.json
