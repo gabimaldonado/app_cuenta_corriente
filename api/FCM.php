@@ -5,17 +5,31 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Google\Auth\Credentials\ServiceAccountCredentials;
 
-function getTokenAcceso(): string
+// Las credenciales de la cuenta de servicio de Firebase NO están en el repositorio:
+// se leen de la variable de entorno FCM_CREDENCIALES (en Railway, pestaña Variables),
+// que tiene el contenido completo del JSON que se descarga de la consola de Firebase.
+function leerCredenciales(): array
 {
-    $jsonCredenciales = __DIR__ . '/cuenta-corriente-app-movil-cff00fcc9103.json';
+    $json = getenv('FCM_CREDENCIALES');
+    if (!$json) {
+        throw new Exception('Falta la variable de entorno FCM_CREDENCIALES');
+    }
+    $credenciales = json_decode($json, true);
+    if (!is_array($credenciales) || !isset($credenciales['project_id'])) {
+        throw new Exception('FCM_CREDENCIALES no tiene un JSON válido');
+    }
+    return $credenciales;
+}
 
+function getTokenAcceso(array $datosCredenciales): string
+{
     $scopes = [
         'https://www.googleapis.com/auth/firebase.messaging'
     ];
 
     $credenciales = new ServiceAccountCredentials(
         $scopes,
-        $jsonCredenciales
+        $datosCredenciales
     );
 
     $token = $credenciales->fetchAuthToken();
@@ -34,14 +48,17 @@ function enviarNotificacion(
     string $cuerpo
 ): array {
 
-	$tokenAcceso = NULL;
+	// Si falta la configuración o Firebase no responde, no se manda el aviso,
+	// pero el pago o la entrega se guardan igual (el error queda en el log).
 	try {
-    	$tokenAcceso = getTokenAcceso();
-	} catch (Exception $err) {
+		$datosCredenciales = leerCredenciales();
+		$tokenAcceso = getTokenAcceso($datosCredenciales);
+	} catch (\Throwable $err) {
+		error_log('FCM: ' . $err->getMessage());
 		return [];
 	}
 
-    $idProyecto = 'cuenta-corriente-app-movil';
+    $idProyecto = $datosCredenciales['project_id'];
 
     $url = "https://fcm.googleapis.com/v1/projects/{$idProyecto}/messages:send";
 
