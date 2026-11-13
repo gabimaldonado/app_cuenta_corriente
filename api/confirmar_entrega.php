@@ -7,6 +7,7 @@
 require "cors.php";
 require "conexion.php";
 require "auth.php";
+require_once "FCM.php";
 header("Content-Type: application/json; charset=utf-8");
 
 if ($_SERVER["REQUEST_METHOD"] !== "PUT") {
@@ -26,7 +27,7 @@ if (!isset($cuerpo["entrega_id"]) || !is_numeric($cuerpo["entrega_id"])
 }
 
 // La entrega tiene que existir (404) y estar abierta (409)
-$consulta = $conexion->prepare("SELECT id, estado FROM entregas WHERE id = :id");
+$consulta = $conexion->prepare("SELECT id, estado, cliente_id, fecha FROM entregas WHERE id = :id");
 $consulta->execute([":id" => $cuerpo["entrega_id"]]);
 $entrega = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -104,6 +105,21 @@ try {
     echo json_encode(["error" => "No se pudo confirmar la entrega"], JSON_UNESCAPED_UNICODE);
     exit();
 }
+
+
+$consultaCliente = $conexion->prepare(
+    "SELECT nombre FROM clientes
+     WHERE id = :cliente_id"
+);
+$consultaCliente->execute([":cliente_id" => $entrega["cliente_id"]]);
+$cliente = $consultaCliente->fetch(PDO::FETCH_ASSOC);
+$nombreCliente = $cliente["nombre"];
+$fechaEntrega = $entrega["fecha"];
+$result = enviarNotificacion(
+	"avisos",
+	"Entrega confirmada",
+	"{$nombreCliente} confirmo la entrega del {$fechaEntrega}"
+);
 
 echo json_encode([
     "entrega_id"      => (int) $entrega["id"],

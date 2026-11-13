@@ -8,6 +8,7 @@
 require "cors.php";
 require "conexion.php";
 require "auth.php";
+require_once "FCM.php";
 header("Content-Type: application/json; charset=utf-8");
 
 $metodo = $_SERVER["REQUEST_METHOD"];
@@ -80,7 +81,7 @@ if ($metodo === "POST") {
     }
 
     // La clienta tiene que existir y estar activa
-    $consulta = $conexion->prepare("SELECT id, activo FROM clientes WHERE id = :id");
+    $consulta = $conexion->prepare("SELECT id, activo, nombre FROM clientes WHERE id = :id");
     $consulta->execute([":id" => $cuerpo["cliente_id"]]);
     $cliente = $consulta->fetch(PDO::FETCH_ASSOC);
 
@@ -163,6 +164,16 @@ if ($metodo === "POST") {
         "cliente_id" => (int) $cliente["id"],
         "estado"     => "abierta"
     ], JSON_UNESCAPED_UNICODE);
+
+	$nombreCliente = $cliente["nombre"];
+	$cantProductos = count($cuerpo["productos"]);
+	$strCantProductos = $cantProductos != 1 ? "productos" : "producto";
+	$result = enviarNotificacion(
+		"avisos",
+		"Nueva entrega",
+		"{$nombreCliente} creo una nueva entrega con {$cantProductos} {$strCantProductos}"
+	);
+
     exit();
 }
 

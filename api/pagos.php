@@ -6,6 +6,7 @@
 require_once "cors.php";
 require_once "conexion.php";
 require_once "auth.php";
+require_once "FCM.php";
 
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -117,6 +118,14 @@ if ($metodo === 'POST') {
                 "observacion" => $observacion
             ]
         ]);
+
+		$nombreCliente = $cliente["nombre"];
+		$result = enviarNotificacion(
+			"avisos",
+			"Nuevo pago",
+			"{$nombreCliente} te pagó \${$monto}"
+		);
+
     } catch (PDOException $e) {
         http_response_code(500);
         echo json_encode(["error" => "Error interno del servidor al procesar el pago."]);
